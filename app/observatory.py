@@ -102,6 +102,7 @@ def log_it_command(
     model: str,
     metadata: Optional[Dict[str, object]] = None,
     event_id: Optional[str] = None,
+    correlation_id: Optional[str] = None,
 ) -> str:
     record_id = str(uuid4())
     features = command_features(command)
@@ -111,6 +112,7 @@ def log_it_command(
         {
             "record_id": record_id,
             "event_id": event_id,
+            "correlation_id": correlation_id,
             "timestamp": utcnow_iso(),
             "event": "attacker_command_received",
             "model": model,
@@ -125,6 +127,8 @@ def log_it_command(
 
 def log_it_result(
     record_id: str,
+    event_id: Optional[str],
+    correlation_id: Optional[str],
     status: str,
     detail: str,
     base_url: Optional[str] = None,
@@ -136,6 +140,8 @@ def log_it_result(
         IT_LOG_FILE,
         {
             "record_id": record_id,
+            "event_id": event_id,
+            "correlation_id": correlation_id,
             "timestamp": utcnow_iso(),
             "event": "attacker_command_processed",
             "status": status,

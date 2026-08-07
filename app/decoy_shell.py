@@ -67,6 +67,11 @@ def _default_state(command: str, metadata: Optional[Dict[str, object]]) -> Dict[
             "history": [],
             "last_command": "",
             "last_output": "",
+            "virtual_files": {
+                "C:\\Users\\svc-backup\\notes.txt": "backup schedule\n- dc01\n- fs01",
+            },
+            "virtual_dirs": ["C:\\Users\\svc-backup", "C:\\Users\\svc-backup\\Desktop", "C:\\Users\\svc-backup\\.ssh"],
+            "virtual_users": ["Administrator", "svc-backup", "support"],
         }
 
     return {
@@ -81,6 +86,12 @@ def _default_state(command: str, metadata: Optional[Dict[str, object]]) -> Dict[
         "history": [],
         "last_command": "",
         "last_output": "",
+        "virtual_files": {
+            "/etc/motd": "Authorized users only.\n",
+            "/var/www/html/README.md": "Echo-Net decoy web root\n",
+        },
+        "virtual_dirs": ["/", "/home/ubuntu", "/var/www/html", "/var/log", "/tmp"],
+        "virtual_users": ["root", "ubuntu", "www-data"],
     }
 
 
@@ -125,44 +136,106 @@ def _split_pipeline(command: str) -> List[str]:
     return parts or [command.strip()]
 
 
-def _should_use_llm_fallback(command: str, state: Dict[str, object]) -> bool:
-    lowered = command.strip().lower()
+def _normalize_state(state: Dict[str, object]) -> None:
+    if not isinstance(state.get("virtual_files"), dict):
+        state["virtual_files"] = {}
+    if not isinstance(state.get("virtual_dirs"), list):
+        state["virtual_dirs"] = []
+    if not isinstance(state.get("virtual_users"), list):
+        state["virtual_users"] = []
+
+
+def _linux_abs_path(cwd: str, raw: str) -> str:
+    target = (raw or "").strip().strip('"\'')
+    if not target or target == ".":
+        return cwd
+    if target.startswith("/"):
+        path = target
+    elif target == "..":
+        path = "/".join(cwd.rstrip("/").split("/")[:-1]) or "/"
+    else:
+        path = f"{cwd.rstrip('/')}/{target}".replace("//", "/")
+    return path.rstrip("/") or "/"
+
+
+def _windows_abs_path(cwd: str, raw: str) -> str:
+    target = (raw or "").strip().strip('"\'')
+    if not target or target == ".":
+        return cwd
+    if re.match(r"^[A-Za-z]:\\", target):
+        return target.rstrip("\\")
+    if target == "..":
+        return "\\".join(cwd.rstrip("\\").split("\\")[:-1]) or "C:\\"
+    return (cwd.rstrip("\\") + "\\" + target).replace("\\\\", "\\")
+
+
+def _classify_command_intent(command: str, shell_family: str) -> str:
+    lowered = (command or "").strip().lower()
     if not lowered:
-        return False
+        return "noop"
 
-    shell_family = str(state.get("shell_family") or "")
-    shell_tokens = {
-        "linux": ["pwd", "whoami", "hostname", "id", "ls", "cat ", "ip a", "ifconfig", "ps ", "history", "echo ", "cd ", "uname", "date", "uptime", "df ", "free ", "ip route", "netstat", "ss "],
-        "windows": ["whoami", "hostname", "$env:computername", "pwd", "dir", "ipconfig", "tasklist", "certutil", "type ", "echo ", "cd ", "cls"],
-    }
+    deterministic_prefixes = [
+        "pwd",
+        "whoami",
+        "hostname",
+        "id",
+        "ls",
+        "cat ",
+        "cd ",
+        "echo ",
+        "history",
+        "ip route",
+        "ip a",
+        "ifconfig",
+        "ps ",
+        "netstat",
+        "ss ",
+        "dir",
+        "ipconfig",
+        "tasklist",
+        "type ",
+        "touch ",
+        "mkdir ",
+        "rm ",
+        "del ",
+        "useradd ",
+        "net user ",
+    ]
+    if any(lowered == token or lowered.startswith(token) for token in deterministic_prefixes):
+        return "deterministic"
 
-    tokens = shell_tokens.get(shell_family, shell_tokens["linux"])
-    if any(lowered == token or lowered.startswith(token) for token in tokens):
-        return False
+    if any(symbol in lowered for symbol in ["|", ">", "<", "&&", ";"]):
+        return "deterministic"
 
-    if any(marker in lowered for marker in ["|", ">", "<", "&&", ";"]):
-        return False
+    if any(
+        phrase in lowered
+        for phrase in [
+            "show me",
+            "tell me",
+            "what is",
+            "how do",
+            "list all",
+            "current",
+            "running",
+            "status",
+            "network",
+            "routes",
+            "processes",
+        ]
+    ):
+        return "natural_language"
 
     if len(lowered.split()) >= 4:
-        return True
+        return "natural_language"
 
-    natural_language_hints = [
-        "show me",
-        "tell me",
-        "list",
-        "explain",
-        "what is",
-        "how do",
-        "give me",
-        "current",
-        "running",
-        "status",
-        "routes",
-        "processes",
-        "files",
-        "network",
-    ]
-    return any(hint in lowered for hint in natural_language_hints)
+    return "unknown"
+
+
+def _should_use_llm_fallback(command: str, state: Dict[str, object]) -> bool:
+    intent = _classify_command_intent(command, str(state.get("shell_family") or "linux"))
+    if intent == "noop":
+        return False
+    return intent in {"natural_language", "unknown"}
 
 
 def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[str], int]:
@@ -170,6 +243,9 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
     cwd = str(state.get("cwd", "/var/www/html"))
     user = str(state.get("username", "ubuntu"))
     host = str(state.get("hostname", "app-server-02"))
+    files = state.get("virtual_files", {})
+    dirs = state.get("virtual_dirs", [])
+    users = state.get("virtual_users", [])
 
     if lowered in {"", "clear"}:
         return [], 0
@@ -202,10 +278,25 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
         state["cwd"] = f"{cwd.rstrip('/')}/{target}".replace("//", "/")
         return [], 0
     if lowered.startswith("ls"):
-        return [
-            "app.py  logs/  static/  templates/",
-            "README.md  requirements.txt  .env",
-        ], 0
+        listing = [
+            "app.py",
+            "logs/",
+            "static/",
+            "templates/",
+            "README.md",
+            "requirements.txt",
+            ".env",
+        ]
+        prefix = cwd.rstrip("/") + "/"
+        dynamic_entries: list[str] = []
+        for path in files.keys():
+            if not str(path).startswith(prefix):
+                continue
+            rel = str(path)[len(prefix):]
+            if "/" not in rel and rel:
+                dynamic_entries.append(rel)
+        merged = sorted(set(listing + dynamic_entries))
+        return ["  ".join(merged[:8])], 0
     if lowered.startswith("cat /etc/os-release"):
         return [
             'NAME="Ubuntu"',
@@ -213,6 +304,12 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
             'ID=ubuntu',
             'PRETTY_NAME="Ubuntu 22.04.4 LTS"',
         ], 0
+    if lowered.startswith("cat "):
+        target = _linux_abs_path(cwd, command[4:])
+        content = files.get(target)
+        if content is None:
+            return [f"cat: {target}: No such file or directory"], 1
+        return str(content).splitlines() or [""], 0
     if lowered.startswith("ip a") or lowered.startswith("ifconfig"):
         return [
             "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500",
@@ -253,7 +350,49 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
         history = state.get("history", [])[-10:]
         lines = [f"{index + 1}  {entry}" for index, entry in enumerate(history)]
         return lines or [""], 0
+    if lowered.startswith("touch "):
+        target = _linux_abs_path(cwd, command[6:])
+        files[target] = str(files.get(target, ""))
+        state["virtual_files"] = files
+        if target.rsplit("/", 1)[0] not in dirs:
+            dirs.append(target.rsplit("/", 1)[0] or "/")
+            state["virtual_dirs"] = dirs
+        return [], 0
+    if lowered.startswith("mkdir "):
+        target = _linux_abs_path(cwd, command[6:])
+        if target not in dirs:
+            dirs.append(target)
+            state["virtual_dirs"] = dirs
+        return [], 0
+    if lowered.startswith("rm "):
+        target = _linux_abs_path(cwd, command[3:])
+        if target in files:
+            del files[target]
+            state["virtual_files"] = files
+            return [], 0
+        return [f"rm: cannot remove '{target}': No such file or directory"], 1
+    if lowered.startswith("useradd "):
+        new_user = command.split(maxsplit=1)[1].strip()
+        if not new_user:
+            return ["useradd: invalid user name"], 2
+        if new_user in users:
+            return [f"useradd: user '{new_user}' already exists"], 9
+        users.append(new_user)
+        state["virtual_users"] = users
+        return [], 0
+    if lowered.startswith("id "):
+        query_user = command.split(maxsplit=1)[1].strip()
+        if query_user in users:
+            return [f"uid=1002({query_user}) gid=1002({query_user}) groups=1002({query_user})"], 0
+        return [f"id: '{query_user}': no such user"], 1
     if lowered.startswith("echo "):
+        redirect_match = re.match(r"echo\s+(.+?)\s*>\s*(\S+)$", command, flags=re.IGNORECASE)
+        if redirect_match:
+            content = redirect_match.group(1).strip().strip('"\'')
+            target = _linux_abs_path(cwd, redirect_match.group(2))
+            files[target] = content + "\n"
+            state["virtual_files"] = files
+            return [], 0
         return [command[5:].strip().strip('"\'')], 0
 
     return [f"bash: {command.split()[0]}: command not found"], 127
@@ -264,6 +403,8 @@ def _handle_windows_command(state: Dict[str, object], command: str) -> Tuple[Lis
     cwd = str(state.get("cwd", "C:\\Users\\svc-backup"))
     user = str(state.get("username", "svc-backup"))
     host = str(state.get("hostname", "WIN-SRV-02"))
+    files = state.get("virtual_files", {})
+    users = state.get("virtual_users", [])
 
     if lowered in {"", "cls"}:
         return [], 0
@@ -282,12 +423,12 @@ def _handle_windows_command(state: Dict[str, object], command: str) -> Tuple[Lis
         if re.match(r"^[A-Za-z]:\\", target):
             state["cwd"] = target.rstrip("\\")
             return [], 0
-        state["cwd"] = f"{cwd.rstrip('\\')}\\{target}".replace("\\\\", "\\")
+        state["cwd"] = (cwd.rstrip("\\") + "\\" + target).replace("\\\\", "\\")
         return [], 0
     if lowered.startswith("dir"):
         return [
             " Volume in drive C has no label.",
-            " Directory of C:\\Users\\svc-backup",
+            f" Directory of {cwd}",
             "",
             "08/07/2026  08:10 AM    <DIR>          .ssh",
             "08/07/2026  08:10 AM    <DIR>          Desktop",
@@ -309,9 +450,37 @@ def _handle_windows_command(state: Dict[str, object], command: str) -> Tuple[Lis
     if lowered.startswith("certutil"):
         return ["CertUtil: -decode command completed successfully."], 0
     if lowered.startswith("type "):
-        return ["Access is denied."], 5
+        target = _windows_abs_path(cwd, command[5:])
+        content = files.get(target)
+        if content is None:
+            return ["The system cannot find the file specified."], 2
+        return str(content).splitlines() or [""], 0
     if lowered.startswith("echo "):
+        redirect_match = re.match(r"echo\s+(.+?)\s*>\s*(\S+)$", command, flags=re.IGNORECASE)
+        if redirect_match:
+            content = redirect_match.group(1).strip().strip('"\'')
+            target = _windows_abs_path(cwd, redirect_match.group(2))
+            files[target] = content + "\n"
+            state["virtual_files"] = files
+            return [], 0
         return [command[5:].strip().strip('"\'')], 0
+    if lowered.startswith("del "):
+        target = _windows_abs_path(cwd, command[4:])
+        if target in files:
+            del files[target]
+            state["virtual_files"] = files
+            return [], 0
+        return ["Could Not Find " + target], 1
+    if lowered.startswith("net user "):
+        parts = command.split()
+        if len(parts) < 3:
+            return ["The syntax of this command is:", "NET USER [username [password | *] [options]]"], 1
+        new_user = parts[2]
+        if new_user in users:
+            return ["The account already exists."], 2
+        users.append(new_user)
+        state["virtual_users"] = users
+        return ["The command completed successfully."], 0
 
     return [f"'{command.split()[0]}' is not recognized as an internal or external command,"], 9009
 
@@ -453,11 +622,13 @@ def simulate_terminal_response(
     command: Optional[str],
     metadata: Optional[Dict[str, object]] = None,
     event_id: Optional[str] = None,
+    correlation_id: Optional[str] = None,
 ) -> Dict[str, object]:
     metadata = metadata or {}
     session_key = _session_key(metadata, event_id)
     normalized = _normalize_command(command or "")
     state = _load_state(session_key, normalized, metadata)
+    _normalize_state(state)
 
     touch_session(
         session_key,
@@ -487,6 +658,8 @@ def simulate_terminal_response(
         _persist_state(session_key, state, metadata)
         return {
             "session_key": session_key,
+            "correlation_id": correlation_id,
+            "intent": "noop",
             "terminal_profile": state.get("shell_family"),
             "prompt": prompt,
             "output": [],
@@ -505,7 +678,10 @@ def simulate_terminal_response(
     segments = _split_pipeline(normalized)
     combined_output: List[str] = []
     exit_code = 0
+    intent = _classify_command_intent(normalized, str(state.get("shell_family") or "linux"))
+    used_llm = False
     if _should_use_llm_fallback(normalized, state):
+        used_llm = True
         llm_output = _ollama_shell_reply(state, normalized)
         combined_output = _sanitize_ollama_output(llm_output)
         if not _looks_like_terminal_output(combined_output):
@@ -520,7 +696,7 @@ def simulate_terminal_response(
             if exit_code != 0:
                 break
 
-    if not combined_output and exit_code == 0:
+    if not combined_output and exit_code == 0 and used_llm:
         llm_output = _ollama_shell_reply(state, normalized)
         combined_output = _sanitize_ollama_output(llm_output)
         if not _looks_like_terminal_output(combined_output):
@@ -548,6 +724,8 @@ def simulate_terminal_response(
 
     return {
         "session_key": session_key,
+        "correlation_id": correlation_id,
+        "intent": intent,
         "terminal_profile": state.get("shell_family"),
         "prompt": prompt,
         "output": combined_output,

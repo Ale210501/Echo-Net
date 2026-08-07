@@ -9,9 +9,14 @@ const terminalProfile = document.getElementById('terminalProfile');
 const terminalPrompt = document.getElementById('terminalPrompt');
 const terminalCwd = document.getElementById('terminalCwd');
 const terminalExitCode = document.getElementById('terminalExitCode');
-const honeynetStateLabel = document.getElementById('honeynetStateLabel');
-const honeynetSessions = document.getElementById('honeynetSessions');
-const honeynetEvents = document.getElementById('honeynetEvents');
+const terminalSessionsList = document.getElementById('terminalSessionsList');
+const terminalOverviewState = document.getElementById('terminalOverviewState');
+const terminalOverviewSession = document.getElementById('terminalOverviewSession');
+const honeynetOverviewState = document.getElementById('honeynetOverviewState');
+const honeynetOverviewContainer = document.getElementById('honeynetOverviewContainer');
+const scenarioOverview = document.getElementById('scenarioOverview');
+const pivotAlertBox = document.getElementById('pivotAlertBox');
+const pivotSeverityLabel = document.getElementById('pivotSeverityLabel');
 const predictionList = document.getElementById('predictionList');
 const itList = document.getElementById('itList');
 const otList = document.getElementById('otList');
@@ -37,6 +42,20 @@ let filterState = {
   behavior: 'all',
 };
 
+function setPill(el, text, state) {
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('ok', 'warn', 'error', 'running', 'idle', 'live', 'critical');
+  if (state) el.classList.add(state);
+}
+
+function deriveState(value) {
+  const text = String(value || '').toLowerCase();
+  if (text.includes('live') || text.includes('running') || text.includes('started') || text.includes('ok') || text.includes('completed')) return 'live';
+  if (text.includes('failed') || text.includes('error') || text.includes('critical') || text.includes('missing') || text.includes('disconnected')) return 'error';
+  return 'warn';
+}
+
 function escapeHtml(text) {
   return String(text)
     .replaceAll('&', '&amp;')
@@ -56,6 +75,7 @@ function statusTag(status) {
 }
 
 function renderItems(container, items, renderer) {
+  if (!container) return;
   if (!Array.isArray(items) || items.length === 0) {
     container.innerHTML = '<div class="stream-item"><small>No data yet.</small></div>';
     return;
@@ -68,6 +88,7 @@ function renderItems(container, items, renderer) {
 }
 
 function renderTranscript(container, transcript) {
+  if (!container) return;
   if (!Array.isArray(transcript) || transcript.length === 0) {
     container.textContent = 'No terminal transcript yet.';
     return;
@@ -75,7 +96,24 @@ function renderTranscript(container, transcript) {
   container.textContent = transcript.join('\n');
 }
 
-function renderBarChart(container, entries, colorClass = '') {
+function applyPivotAlert(alert) {
+  const active = Boolean(alert?.active);
+  const severity = String(alert?.severity || 'info').toLowerCase();
+  if (pivotSeverityLabel) {
+    setPill(
+      pivotSeverityLabel,
+      active ? 'Severity: ' + severity.toUpperCase() : 'No active pivot alert',
+      active ? (severity === 'critical' ? 'critical' : (severity === 'warn' ? 'warn' : 'ok')) : 'warn'
+    );
+  }
+  if (pivotAlertBox) {
+    pivotAlertBox.textContent = alert?.message || 'No pivot telemetry available.';
+    pivotAlertBox.className = 'pivot-alert ' + severity;
+  }
+}
+
+function renderBarChart(container, entries) {
+  if (!container) return;
   if (!Array.isArray(entries) || entries.length === 0) {
     container.innerHTML = '<div class="stream-item"><small>No data yet.</small></div>';
     return;
@@ -86,7 +124,7 @@ function renderBarChart(container, entries, colorClass = '') {
     .map((entry) => {
       const width = Math.max(4, Math.round(((entry.value || 0) / max) * 100));
       return `
-        <div class="bar-row ${colorClass}">
+        <div class="bar-row">
           <div class="bar-label">${escapeHtml(entry.label)}</div>
           <div class="bar-value">${escapeHtml(entry.value)}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
@@ -107,11 +145,6 @@ function aggregateCounts(items, keyFn) {
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
-}
-
-function parseTimestamp(value) {
-  const parsed = Date.parse(value || '');
-  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function applyFiltersToItems(items, predicate) {
@@ -139,16 +172,23 @@ function activeFiltersPredicate(entry) {
   const entryIp = extractIp(entry).toLowerCase();
   const entryBehavior = extractBehavior(entry).toLowerCase();
 
-  if (technique && !entryTechnique.includes(technique)) {
-    return false;
-  }
-  if (ip && !entryIp.includes(ip)) {
-    return false;
-  }
-  if (behavior !== 'all' && entryBehavior !== behavior) {
-    return false;
-  }
+  if (technique && !entryTechnique.includes(technique)) return false;
+  if (ip && !entryIp.includes(ip)) return false;
+  if (behavior !== 'all' && entryBehavior !== behavior) return false;
   return true;
+}
+
+function latestScenarioSummary(queueEvents) {
+  const events = Array.isArray(queueEvents) ? queueEvents : [];
+  const match = events
+    .slice()
+    .reverse()
+    .find((entry) => String(entry.event || '').includes('scenario'));
+
+  if (!match) return 'No recent run';
+  const status = match.status || match.event || 'scenario';
+  const ts = match.timestamp || '-';
+  return `${status} @ ${ts}`;
 }
 
 function renderDashboard(data) {
@@ -165,9 +205,13 @@ function renderDashboard(data) {
   queueEventsBox.textContent = JSON.stringify(data.recent_queue_events || [], null, 2);
   lastRefreshLabel.textContent = `Last refresh ${nowText}`;
 
+  applyPivotAlert(data.pivot_alert || {});
+
   terminalStateLabel.textContent = liveTerminal.status === 'live'
     ? 'Live terminal session active'
     : 'No terminal session yet';
+  terminalStateLabel.classList.remove('ok', 'warn', 'error', 'running', 'idle', 'live', 'critical');
+  terminalStateLabel.classList.add(liveTerminal.status === 'live' ? 'live' : 'warn');
   terminalSessionKey.textContent = liveTerminal.latest_session?.session_key || '-';
   terminalProfile.textContent = liveTerminal.latest_session?.shell_family || '-';
   terminalPrompt.textContent = liveTerminal.latest_session?.prompt || '-';
@@ -175,29 +219,31 @@ function renderDashboard(data) {
   terminalExitCode.textContent = liveTerminal.latest_session?.last_exit_code ?? '-';
   renderTranscript(terminalBox, liveTerminal.transcript || []);
 
-  honeynetStateLabel.textContent = honeynet.status === 'live'
-    ? 'Honeynet activity detected'
-    : 'No honeynet activity yet';
-  renderItems(honeynetSessions, honeynet.active_ot_sessions || [], (entry) => {
-    return `
-      <article class="stream-item">
-        <strong>${escapeHtml(entry.session_key || 'ot_session')}</strong>
-        ${statusTag(entry.trap || 'ot')}
-        <div><small>${escapeHtml(entry.last_activity || '-')}</small></div>
-        <div>Domain: ${escapeHtml(entry.target_domain || '-')} | Started: ${escapeHtml(entry.started_at || '-')}</div>
-      </article>
-    `;
-  });
-  renderItems(honeynetEvents, honeynet.recent_ot_events || [], (entry) => {
-    return `
-      <article class="stream-item">
-        <strong>${escapeHtml(entry.event || 'ot_event')}</strong>
-        ${statusTag(entry.status || 'event')}
-        <div><small>${escapeHtml(entry.timestamp || '-')}</small></div>
-        <div>${escapeHtml(entry.detail || '')}</div>
-      </article>
-    `;
-  });
+  const terminalSessions = Array.isArray(liveTerminal.sessions) ? liveTerminal.sessions : [];
+  if (terminalSessions.length === 0) {
+    terminalSessionsList.textContent = 'No session data yet.';
+  } else {
+    terminalSessionsList.innerHTML = terminalSessions
+      .map((entry) => {
+        return `
+          <div class="session-item static">
+            <strong>${escapeHtml(entry.session_key || '-')}</strong>
+            <div><small>IP: ${escapeHtml(entry.source_ip || '-')} | Last: ${escapeHtml(entry.last_activity || '-')}</small></div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  setPill(terminalOverviewState, liveTerminal.status || 'unknown', deriveState(liveTerminal.status));
+  terminalOverviewSession.textContent = liveTerminal.latest_session?.session_key || '-';
+  setPill(
+    honeynetOverviewState,
+    honeynet.runtime?.status || honeynet.status || 'unknown',
+    deriveState(honeynet.runtime?.status || honeynet.status)
+  );
+  honeynetOverviewContainer.textContent = honeynet.runtime?.container_status || '-';
+  scenarioOverview.textContent = latestScenarioSummary(data.recent_queue_events || []);
 
   const filteredPredictions = applyFiltersToItems(data.prediction_tail, activeFiltersPredicate);
   const filteredIt = applyFiltersToItems(data.it_commands_tail, activeFiltersPredicate);
@@ -233,7 +279,6 @@ function renderDashboard(data) {
         <div><small>${escapeHtml(entry.timestamp || '-')}</small></div>
         <div>Command: ${escapeHtml(entry.command || '')}</div>
         <div>Profile: ${escapeHtml(behavior.profile || '-')} | Score: ${escapeHtml(behavior.automation_score ?? '-')}</div>
-        <div>IP: ${escapeHtml(entry.request?.client_ip || '-')} | UA: ${escapeHtml(entry.request?.user_agent || '-')}</div>
       </article>
     `;
   });
@@ -245,7 +290,6 @@ function renderDashboard(data) {
         ${statusTag(entry.status || 'event')}
         <div><small>${escapeHtml(entry.timestamp || '-')}</small></div>
         <div>${escapeHtml(entry.detail || '')}</div>
-        <div>Snapshot detail: ${escapeHtml(entry.export_file || entry.container_name || '-')}</div>
       </article>
     `;
   });
@@ -270,8 +314,7 @@ function connectSocket() {
   socket = new WebSocket(`${proto}://${window.location.host}/ws/dashboard`);
 
   socket.onopen = () => {
-    wsStatusEl.textContent = 'Live';
-    wsStatusEl.style.color = '#52d273';
+    setPill(wsStatusEl, 'Live', 'live');
   };
 
   socket.onmessage = (event) => {
@@ -280,14 +323,12 @@ function connectSocket() {
   };
 
   socket.onclose = () => {
-    wsStatusEl.textContent = 'Disconnected';
-    wsStatusEl.style.color = '#ff6b6b';
+    setPill(wsStatusEl, 'Disconnected', 'error');
     reconnectTimer = setTimeout(connectSocket, 2500);
   };
 
   socket.onerror = () => {
-    wsStatusEl.textContent = 'Error';
-    wsStatusEl.style.color = '#ffd166';
+    setPill(wsStatusEl, 'Error', 'warn');
   };
 }
 

@@ -28,9 +28,28 @@ if UI_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
 
 
+def _serve_ui_page(file_name: str) -> FileResponse:
+    return FileResponse(str(UI_DIR / file_name))
+
+
 @app.get("/soc/dashboard")
 def soc_dashboard() -> FileResponse:
-    return FileResponse(str(UI_DIR / "index.html"))
+    return _serve_ui_page("index.html")
+
+
+@app.get("/soc/terminal")
+def soc_terminal() -> FileResponse:
+    return _serve_ui_page("terminal.html")
+
+
+@app.get("/soc/scenario")
+def soc_scenario() -> FileResponse:
+    return _serve_ui_page("scenario.html")
+
+
+@app.get("/soc/honeynet")
+def soc_honeynet() -> FileResponse:
+    return _serve_ui_page("honeynet.html")
 
 
 @app.on_event("startup")

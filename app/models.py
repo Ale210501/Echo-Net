@@ -66,8 +66,31 @@ class PredictionAccepted(BaseModel):
 
 class AttackerCommandIn(BaseModel):
     command: str = Field(..., min_length=1, max_length=4000)
+    source_ip: Optional[str] = Field(
+        default=None,
+        description="Optional source IP override for simulation and session separation.",
+    )
+    user_agent: Optional[str] = Field(
+        default=None,
+        description="Optional user-agent override for simulation and session separation.",
+    )
 
 
 class SocReportRequest(BaseModel):
     attack_label: str = Field(default="Echo-Net simulated incident")
     model: Optional[str] = Field(default=None)
+
+
+class ScenarioRunRequest(BaseModel):
+    source_ip: str = Field(default="10.20.30.40")
+    user_agent: str = Field(default="scenario-runner/1.0")
+    commands: list[str] = Field(
+        default_factory=lambda: [
+            "whoami",
+            "ip route",
+            "show me current network routes",
+        ]
+    )
+    trigger_ot: bool = Field(default=True)
+    generate_report: bool = Field(default=True)
+    attack_label: str = Field(default="Echo-Net scenario-runner incident")

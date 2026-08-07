@@ -20,7 +20,13 @@ from app.mitre_execution_ta0002 import (
     TA0002_TOP_LEVEL_TECHNIQUES,
     resolve_reaction,
 )
-from app.models import AttackerCommandIn, PredictionAccepted, PredictionIn, SocReportRequest
+from app.models import (
+    AttackerCommandIn,
+    PredictionAccepted,
+    PredictionIn,
+    ScenarioRunRequest,
+    SocReportRequest,
+)
 from app.observatory import (
     elapsed_ms,
     export_conpot_forensics_snapshot,
@@ -31,6 +37,7 @@ from app.observatory import (
     start_timer,
 )
 from app.orchestrator import route_to_ollama_decoy, start_or_touch_conpot
+from app.scenario_runner import run_basic_scenario
 from app.soc_reporting import generate_soc_report
 from app.state import append_event, get_serialized_sessions, utcnow
 
@@ -112,7 +119,24 @@ async def dashboard_ws(websocket: WebSocket) -> None:
 
 @router.post("/attacker/command")
 def attacker_command(payload: AttackerCommandIn, request: Request) -> Dict[str, object]:
-    return route_to_ollama_decoy(payload.command, metadata=request_metadata(request))
+    metadata = request_metadata(request)
+    if payload.source_ip:
+        metadata["client_ip"] = payload.source_ip
+    if payload.user_agent:
+        metadata["user_agent"] = payload.user_agent
+    return route_to_ollama_decoy(payload.command, metadata=metadata)
+
+
+@router.post("/scenario/run/basic")
+def scenario_run_basic(payload: ScenarioRunRequest) -> Dict[str, object]:
+    return run_basic_scenario(
+        source_ip=payload.source_ip,
+        user_agent=payload.user_agent,
+        commands=payload.commands,
+        trigger_ot=payload.trigger_ot,
+        generate_report=payload.generate_report,
+        attack_label=payload.attack_label,
+    )
 
 
 @router.post("/prediction", response_model=PredictionAccepted, status_code=202)
@@ -146,7 +170,7 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
             event_id=event_id,
         )
     else:
-        runtime_result = start_or_touch_conpot()
+        runtime_result = start_or_touch_conpot(correlation_id=event_id)
 
     reaction_with_runtime: Dict[str, object] = {**reaction, **runtime_result}
 

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echo-Net Terminal Live</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <nav class="top-nav">
+    <a href="/soc/dashboard">Dashboard</a>
+    <a class="active" href="/soc/terminal">Terminal</a>
+    <a href="/soc/scenario">Scenario Lab</a>
+    <a href="/soc/honeynet">Honeynet</a>
+  </nav>
+
+  <section class="state-legend">
+    <span class="legend-label">Status Legend</span>
+    <span class="state-pill live">Live</span>
+    <span class="state-pill running">Running</span>
+    <span class="state-pill warn">Warning</span>
+    <span class="state-pill error">Error</span>
+    <span class="state-pill critical">Critical</span>
+  </section>
+
+  <header class="hero">
+    <div>
+      <h1>Decoy Terminal Console</h1>
+      <p>Live attacker simulation sessions with transcript, prompt state, and command routing.</p>
+    </div>
+    <div class="status-grid">
+      <div class="kpi">
+        <span>Feed</span>
+        <strong id="feedState" class="state-pill warn">Polling...</strong>
+      </div>
+      <div class="kpi">
+        <span>Active Session</span>
+        <strong id="activeSession">-</strong>
+      </div>
+      <div class="kpi">
+        <span>Last Exit Code</span>
+        <strong id="lastExitCode">-</strong>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="card wide live-console-card">
+      <div class="card-head">
+        <h2>Command Injection</h2>
+        <span class="subtle" id="sendStatus">Ready.</span>
+      </div>
+      <div class="terminal-send-bar">
+        <input id="commandInput" type="text" placeholder="Type attacker command" />
+        <input id="sourceIpInput" type="text" placeholder="Source IP override" />
+        <input id="userAgentInput" type="text" placeholder="User-Agent override" />
+        <button id="sendBtn" type="button">Send</button>
+      </div>
+      <div class="live-console-grid">
+        <div>
+          <h3>Live Transcript</h3>
+          <pre id="transcriptBox">No transcript yet.</pre>
+        </div>
+        <div class="live-console-meta">
+          <div class="meta-block">
+            <span>Prompt</span>
+            <strong id="promptValue">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Current Directory</span>
+            <strong id="cwdValue">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Profile</span>
+            <strong id="profileValue">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Recent Sessions</span>
+            <div id="sessionList" class="session-list">No sessions yet.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card wide">
+      <h2>IT Command Stream</h2>
+      <div id="itStream" class="stream-list"></div>
+    </section>
+  </main>
+
+  <script src="/static/terminal.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 from time import perf_counter
+from uuid import uuid4
 
 import docker
 import requests
@@ -35,8 +36,10 @@ def route_to_ollama_decoy(
     command: Optional[str],
     metadata: Optional[Dict[str, object]] = None,
     event_id: Optional[str] = None,
+    correlation_id: Optional[str] = None,
 ) -> Dict[str, object]:
     touch_session(SESSION_KEY_IT, trap="ollama_decoy", target_domain="IT")
+    correlation_id = correlation_id or event_id or str(uuid4())
 
     if not command:
         return {
@@ -51,16 +54,24 @@ def route_to_ollama_decoy(
         model=OLLAMA_MODEL,
         metadata=metadata,
         event_id=event_id,
+        correlation_id=correlation_id,
     )
 
-    shell_response = simulate_terminal_response(command, metadata=metadata, event_id=event_id)
+    shell_response = simulate_terminal_response(
+        command,
+        metadata=metadata,
+        event_id=event_id,
+        correlation_id=correlation_id,
+    )
     detail = "Attacker command rendered through a stateful fake terminal decoy."
     failure = {
         "status": "routed",
         "detail": detail,
         "model": OLLAMA_MODEL,
         "terminal_profile": shell_response.get("terminal_profile"),
+        "intent": shell_response.get("intent"),
         "session_key": shell_response.get("session_key"),
+        "correlation_id": correlation_id,
         "prompt": shell_response.get("prompt"),
         "current_directory": shell_response.get("current_directory"),
         "last_exit_code": shell_response.get("last_exit_code"),
@@ -72,6 +83,8 @@ def route_to_ollama_decoy(
     }
     log_it_result(
         record_id=record_id,
+        event_id=event_id,
+        correlation_id=correlation_id,
         status="routed",
         detail=detail,
         duration_ms=round((perf_counter() - started) * 1000.0, 3),
@@ -113,7 +126,7 @@ def _run_new_conpot_container(docker_client: object) -> object:
     )
 
 
-def start_or_touch_conpot() -> Dict[str, object]:
+def start_or_touch_conpot(correlation_id: Optional[str] = None) -> Dict[str, object]:
     ensure_observatory_paths()
     try:
         docker_client = docker.from_env()
@@ -123,6 +136,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
             "status": "docker_unavailable",
             "detail": "Docker daemon is not reachable.",
             "error": str(exc),
+            "correlation_id": correlation_id,
         }
         log_ot_event("ot_container_start_failed", failure)
         return failure
@@ -135,6 +149,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                 "detail": (
                     f"Docker network '{HONEYPOT_NETWORK}' must be internal=true for safety."
                 ),
+                "correlation_id": correlation_id,
             }
             log_ot_event("ot_container_start_failed", failure)
             return failure
@@ -146,6 +161,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                 "Create it with: docker network create --driver bridge --internal "
                 f"{HONEYPOT_NETWORK}"
             ),
+            "correlation_id": correlation_id,
         }
         log_ot_event("ot_container_start_failed", failure)
         return failure
@@ -154,6 +170,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
             "status": "docker_error",
             "detail": "Unable to inspect Docker network.",
             "error": str(exc),
+            "correlation_id": correlation_id,
         }
         log_ot_event("ot_container_start_failed", failure)
         return failure
@@ -182,6 +199,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                 "container_id": container.short_id,
                 "volume_host_dir": str(CONPOT_VOLUME_HOST_DIR),
                 "volume_container_dir": CONPOT_CONTAINER_LOG_DIR,
+                "correlation_id": correlation_id,
             }
             log_ot_event("ot_container_recreated", result)
             return result
@@ -206,6 +224,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
             "container_id": container.short_id,
             "volume_host_dir": str(CONPOT_VOLUME_HOST_DIR),
             "volume_container_dir": CONPOT_CONTAINER_LOG_DIR,
+            "correlation_id": correlation_id,
         }
         log_ot_event("ot_container_status", result)
         return result
@@ -226,6 +245,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                 "image": CONPOT_IMAGE,
                 "volume_host_dir": str(CONPOT_VOLUME_HOST_DIR),
                 "volume_container_dir": CONPOT_CONTAINER_LOG_DIR,
+                "correlation_id": correlation_id,
             }
             log_ot_event("ot_container_started", result)
             return result
@@ -247,6 +267,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                     "image": CONPOT_IMAGE,
                     "volume_host_dir": str(CONPOT_VOLUME_HOST_DIR),
                     "volume_container_dir": CONPOT_CONTAINER_LOG_DIR,
+                    "correlation_id": correlation_id,
                 }
                 log_ot_event("ot_container_started", result)
                 return result
@@ -255,6 +276,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                     "status": "start_failed",
                     "detail": "Could not pull/start Conpot container.",
                     "error": str(exc),
+                    "correlation_id": correlation_id,
                 }
                 log_ot_event("ot_container_start_failed", failure)
                 return failure
@@ -263,6 +285,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
                 "status": "start_failed",
                 "detail": "Could not start Conpot container.",
                 "error": str(exc),
+                "correlation_id": correlation_id,
             }
             log_ot_event("ot_container_start_failed", failure)
             return failure
@@ -271,6 +294,7 @@ def start_or_touch_conpot() -> Dict[str, object]:
             "status": "docker_error",
             "detail": "Error while managing Conpot container.",
             "error": str(exc),
+            "correlation_id": correlation_id,
         }
         log_ot_event("ot_container_start_failed", failure)
         return failure

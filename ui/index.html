@@ -7,6 +7,22 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
+  <nav class="top-nav">
+    <a class="active" href="/soc/dashboard">Dashboard</a>
+    <a href="/soc/terminal">Terminal</a>
+    <a href="/soc/scenario">Scenario Lab</a>
+    <a href="/soc/honeynet">Honeynet</a>
+  </nav>
+
+  <section class="state-legend">
+    <span class="legend-label">Status Legend</span>
+    <span class="state-pill live">Live</span>
+    <span class="state-pill running">Running</span>
+    <span class="state-pill warn">Warning</span>
+    <span class="state-pill error">Error</span>
+    <span class="state-pill critical">Critical</span>
+  </section>
+
   <header class="hero">
     <div>
       <h1>Echo-Net SOC Live Dashboard</h1>
@@ -15,7 +31,7 @@
     <div class="status-grid">
       <div class="kpi">
         <span>WebSocket</span>
-        <strong id="wsStatus">Connecting...</strong>
+        <strong id="wsStatus" class="state-pill warn">Connecting...</strong>
       </div>
       <div class="kpi">
         <span>Event Queue</span>
@@ -27,6 +43,46 @@
       </div>
     </div>
   </header>
+
+  <section class="overview-grid">
+    <article class="overview-card">
+      <h3>Terminal Operations</h3>
+      <p>Use the decoy shell page for live injection, session pinning, and transcript inspection.</p>
+      <div class="overview-meta">
+        <span>Status</span>
+        <strong id="terminalOverviewState" class="state-pill warn">No data</strong>
+      </div>
+      <div class="overview-meta">
+        <span>Latest Session</span>
+        <strong id="terminalOverviewSession">-</strong>
+      </div>
+      <a class="jump-link" href="/soc/terminal">Open Terminal Page</a>
+    </article>
+
+    <article class="overview-card">
+      <h3>Scenario Orchestration</h3>
+      <p>Run repeatable IT-to-OT chains and monitor KPI output from the dedicated lab page.</p>
+      <div class="overview-meta">
+        <span>Last Scenario</span>
+        <strong id="scenarioOverview">No recent run</strong>
+      </div>
+      <a class="jump-link" href="/soc/scenario">Open Scenario Lab</a>
+    </article>
+
+    <article class="overview-card">
+      <h3>Honeynet Operations</h3>
+      <p>Inspect Conpot runtime and OT streams with focused controls on the honeynet page.</p>
+      <div class="overview-meta">
+        <span>Runtime</span>
+        <strong id="honeynetOverviewState" class="state-pill warn">No data</strong>
+      </div>
+      <div class="overview-meta">
+        <span>Container</span>
+        <strong id="honeynetOverviewContainer">-</strong>
+      </div>
+      <a class="jump-link" href="/soc/honeynet">Open Honeynet Page</a>
+    </article>
+  </section>
 
   <section class="control-strip">
     <div class="control-group">
@@ -53,6 +109,14 @@
   </section>
 
   <main class="layout">
+    <section class="card wide pivot-card">
+      <div class="card-head">
+        <h2>Pivot Alert</h2>
+        <span class="subtle state-pill warn" id="pivotSeverityLabel">No pivot signal yet.</span>
+      </div>
+      <div id="pivotAlertBox" class="pivot-alert info">Waiting for telemetry correlation...</div>
+    </section>
+
     <section class="card wide">
       <div class="card-head">
         <h2>Live Threat Pulse</h2>
@@ -76,8 +140,8 @@
 
     <section class="card wide live-console-card">
       <div class="card-head">
-        <h2>Live Fake Terminal</h2>
-        <span class="subtle" id="terminalStateLabel">No terminal session yet.</span>
+        <h2>Live Terminal Snapshot</h2>
+        <span class="subtle state-pill warn" id="terminalStateLabel">No terminal session yet.</span>
       </div>
       <div class="live-console-grid">
         <div class="live-console-output">
@@ -104,23 +168,10 @@
             <span>Last Exit Code</span>
             <strong id="terminalExitCode">-</strong>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card wide honeynet-card">
-      <div class="card-head">
-        <h2>Live Honeynet State</h2>
-        <span class="subtle" id="honeynetStateLabel">No honeynet activity yet.</span>
-      </div>
-      <div class="honeynet-grid">
-        <div>
-          <h3>Active OT Sessions</h3>
-          <div id="honeynetSessions" class="stream-list"></div>
-        </div>
-        <div>
-          <h3>Recent OT Events</h3>
-          <div id="honeynetEvents" class="stream-list"></div>
+          <div class="meta-block">
+            <span>Recent Sessions</span>
+            <div id="terminalSessionsList" class="session-list">No session data yet.</div>
+          </div>
         </div>
       </div>
     </section>
