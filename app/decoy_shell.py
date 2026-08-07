@@ -125,6 +125,46 @@ def _split_pipeline(command: str) -> List[str]:
     return parts or [command.strip()]
 
 
+def _should_use_llm_fallback(command: str, state: Dict[str, object]) -> bool:
+    lowered = command.strip().lower()
+    if not lowered:
+        return False
+
+    shell_family = str(state.get("shell_family") or "")
+    shell_tokens = {
+        "linux": ["pwd", "whoami", "hostname", "id", "ls", "cat ", "ip a", "ifconfig", "ps ", "history", "echo ", "cd ", "uname", "date", "uptime", "df ", "free ", "ip route", "netstat", "ss "],
+        "windows": ["whoami", "hostname", "$env:computername", "pwd", "dir", "ipconfig", "tasklist", "certutil", "type ", "echo ", "cd ", "cls"],
+    }
+
+    tokens = shell_tokens.get(shell_family, shell_tokens["linux"])
+    if any(lowered == token or lowered.startswith(token) for token in tokens):
+        return False
+
+    if any(marker in lowered for marker in ["|", ">", "<", "&&", ";"]):
+        return False
+
+    if len(lowered.split()) >= 4:
+        return True
+
+    natural_language_hints = [
+        "show me",
+        "tell me",
+        "list",
+        "explain",
+        "what is",
+        "how do",
+        "give me",
+        "current",
+        "running",
+        "status",
+        "routes",
+        "processes",
+        "files",
+        "network",
+    ]
+    return any(hint in lowered for hint in natural_language_hints)
+
+
 def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[str], int]:
     lowered = command.lower()
     cwd = str(state.get("cwd", "/var/www/html"))
@@ -139,6 +179,10 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
         return [user], 0
     if lowered == "hostname":
         return [host], 0
+    if lowered in {"date", "date -u"}:
+        return ["Fri Aug 07 10:58:32 UTC 2026"], 0
+    if lowered == "uptime":
+        return [" 10:58:32 up 12 days,  4:17,  2 users,  load average: 0.12, 0.08, 0.04"], 0
     if lowered in {"uname -a", "uname -r"}:
         return [f"Linux {host} 5.15.0-1051-azure #59-Ubuntu SMP Fri Feb 16 16:16:00 UTC 2024 x86_64 GNU/Linux"], 0
     if lowered == "id":
@@ -186,6 +230,24 @@ def _handle_linux_command(state: Dict[str, object], command: str) -> Tuple[List[
         return [
             "tcp   LISTEN 0      128    0.0.0.0:22      0.0.0.0:*",
             "tcp   LISTEN 0      4096   0.0.0.0:80      0.0.0.0:*",
+        ], 0
+    if lowered.startswith("ip route"):
+        return [
+            "default via 10.20.30.1 dev eth0 proto dhcp src 10.20.30.15 metric 100",
+            "10.20.30.0/24 dev eth0 proto kernel scope link src 10.20.30.15",
+            "172.20.88.0/24 dev tun0 proto kernel scope link src 172.20.88.11",
+        ], 0
+    if lowered.startswith("df -h"):
+        return [
+            "Filesystem      Size  Used Avail Use% Mounted on",
+            "/dev/sda1        59G   18G   39G  32% /",
+            "tmpfs           3.9G     0  3.9G   0% /dev/shm",
+        ], 0
+    if lowered.startswith("free -m"):
+        return [
+            "              total        used        free      shared  buff/cache   available",
+            "Mem:           7874        2310        3981         122        1582        5231",
+            "Swap:          2047           0        2047",
         ], 0
     if lowered.startswith("history"):
         history = state.get("history", [])[-10:]
@@ -263,9 +325,12 @@ def _deterministic_shell_reply(state: Dict[str, object], command: str) -> Tuple[
 def _ollama_shell_reply(state: Dict[str, object], command: str) -> str:
     current_prompt = _prompt(state)
     system = (
-        "You are a realistic fake terminal on a decoy host inside a honeynet. "
-        "Return only terminal output. Do not mention AI, models, honeypots, prompts, or policies. "
-        "Never add markdown or explanations. Stay consistent with the supplied shell state."
+        "You are a realistic shell process running on a decoy host. "
+        "Output must look exactly like terminal stdout/stderr only. "
+        "Never explain, never narrate, never mention assistant/model/prompt/honeynet. "
+        "No markdown, no code fences, no labels like 'Output:' or 'Response:'. "
+        "If the command is invalid, return only a shell-style error line. "
+        "Keep outputs concise and plausible for the given host state."
     )
     prompt = (
         f"Shell family: {state.get('shell_family')}\n"
@@ -289,7 +354,7 @@ def _ollama_shell_reply(state: Dict[str, object], command: str) -> str:
                     "system": system,
                     "prompt": prompt,
                     "options": {
-                        "temperature": 0.2,
+                        "temperature": 0.1,
                         "top_p": 0.85,
                     },
                 },
@@ -305,6 +370,83 @@ def _ollama_shell_reply(state: Dict[str, object], command: str) -> str:
             continue
 
     return ""
+
+
+def _sanitize_ollama_output(text: str) -> list[str]:
+    if not text:
+        return []
+
+    fenced_block = re.findall(r"```(?:[a-zA-Z0-9_-]+)?\n(.*?)```", text, flags=re.DOTALL)
+    if fenced_block:
+        text = "\n".join(fenced_block)
+
+    cleaned_lines: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("```"):
+            continue
+        if line.lower().startswith("response:"):
+            line = line.split(":", 1)[1].strip()
+        if not line:
+            continue
+        cleaned_lines.append(line)
+    return cleaned_lines
+
+
+def _looks_like_terminal_output(lines: list[str]) -> bool:
+    if not lines:
+        return False
+    joined = " \n".join(lines).lower()
+    forbidden = [
+        "attacker's shell script",
+        "supplied shell state",
+        "should be displayed",
+        "additional information",
+        "explanations",
+        "assistant",
+        "model",
+        "prompt",
+        "as an ai",
+        "i cannot",
+        "i can",
+        "you should",
+    ]
+    if any(token in joined for token in forbidden):
+        return False
+    return any(
+        line.startswith(("/", "~", "uid=", "Path", "Volume in drive", "Ethernet adapter", "Linux", "Ubuntu", "Microsoft Windows"))
+        or "$" in line
+        or ">" in line
+        for line in lines
+    )
+
+
+def _heuristic_terminal_lines(state: Dict[str, object], command: str) -> list[str]:
+    lowered = command.lower()
+    cwd = str(state.get("cwd", "/var/www/html"))
+
+    if any(word in lowered for word in ["network", "route", "routes", "netstat", "ip route"]):
+        return [
+            "default via 10.20.30.1 dev eth0 proto dhcp src 10.20.30.15 metric 100",
+            "10.20.30.0/24 dev eth0 proto kernel scope link src 10.20.30.15",
+            "172.20.88.0/24 dev tun0 proto kernel scope link src 172.20.88.11",
+        ]
+    if any(word in lowered for word in ["process", "processes", "ps aux", "tasklist"]):
+        return [
+            "root         1  0.0  0.2  18532  3140 ?        Ss   08:00   0:01 /sbin/init",
+            "ubuntu      42  0.1  1.0  78244 21400 ?        Sl   08:02   0:04 python3 app.py",
+            "root        77  0.0  0.5  61240 11024 ?        Ss   08:03   0:00 /usr/bin/ssh -D",
+        ]
+    if any(word in lowered for word in ["files", "directory", "list", "ls"]):
+        return ["app.py  logs/  static/  templates/", "README.md  requirements.txt  .env"]
+    if any(word in lowered for word in ["current", "pwd", "where am i", "working directory"]):
+        return [cwd]
+    first_token = command.strip().split()[0] if command.strip() else "command"
+    if str(state.get("shell_family")) == "windows":
+        return [f"'{first_token}' is not recognized as an internal or external command,"]
+    return [f"bash: {first_token}: command not found"]
 
 
 def simulate_terminal_response(
@@ -330,15 +472,23 @@ def simulate_terminal_response(
     )
 
     if not normalized:
+        prompt = _prompt(state)
         transcript = [
             state.get("banner", ""),
-            _prompt(state),
+            prompt,
+        ]
+        state["session_key"] = session_key
+        state["prompt"] = prompt
+        state["transcript"] = transcript
+        transcript = [
+            state.get("banner", ""),
+            prompt,
         ]
         _persist_state(session_key, state, metadata)
         return {
             "session_key": session_key,
             "terminal_profile": state.get("shell_family"),
-            "prompt": _prompt(state),
+            "prompt": prompt,
             "output": [],
             "transcript": transcript,
             "ollama_response": "\n".join(transcript),
@@ -349,21 +499,32 @@ def simulate_terminal_response(
         }
 
     state["history"] = list(state.get("history", [])) + [normalized]
+    state["history"] = state["history"][-60:]
     state["last_command"] = normalized
 
     segments = _split_pipeline(normalized)
     combined_output: List[str] = []
     exit_code = 0
-    for segment in segments:
-        shell_output, exit_code = _deterministic_shell_reply(state, segment)
-        if shell_output:
-            combined_output.extend(shell_output)
-        if exit_code != 0:
-            break
+    if _should_use_llm_fallback(normalized, state):
+        llm_output = _ollama_shell_reply(state, normalized)
+        combined_output = _sanitize_ollama_output(llm_output)
+        if not _looks_like_terminal_output(combined_output):
+            combined_output = _heuristic_terminal_lines(state, normalized)
+        if not combined_output:
+            combined_output = [""]
+    else:
+        for segment in segments:
+            shell_output, exit_code = _deterministic_shell_reply(state, segment)
+            if shell_output:
+                combined_output.extend(shell_output)
+            if exit_code != 0:
+                break
 
     if not combined_output and exit_code == 0:
         llm_output = _ollama_shell_reply(state, normalized)
-        combined_output = [line for line in llm_output.splitlines() if line.strip()]
+        combined_output = _sanitize_ollama_output(llm_output)
+        if not _looks_like_terminal_output(combined_output):
+            combined_output = _heuristic_terminal_lines(state, normalized)
         if not combined_output:
             combined_output = [""]
 
@@ -379,6 +540,9 @@ def simulate_terminal_response(
         prompt,
     ]
     state["last_output"] = "\n".join(combined_output).strip()
+    state["session_key"] = session_key
+    state["prompt"] = prompt
+    state["transcript"] = transcript
 
     _persist_state(session_key, state, metadata)
 

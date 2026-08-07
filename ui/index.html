@@ -74,6 +74,57 @@
       </div>
     </section>
 
+    <section class="card wide live-console-card">
+      <div class="card-head">
+        <h2>Live Fake Terminal</h2>
+        <span class="subtle" id="terminalStateLabel">No terminal session yet.</span>
+      </div>
+      <div class="live-console-grid">
+        <div class="live-console-output">
+          <pre id="terminalBox">No terminal transcript yet.</pre>
+        </div>
+        <div class="live-console-meta">
+          <div class="meta-block">
+            <span>Session</span>
+            <strong id="terminalSessionKey">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Profile</span>
+            <strong id="terminalProfile">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Prompt</span>
+            <strong id="terminalPrompt">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Current Directory</span>
+            <strong id="terminalCwd">-</strong>
+          </div>
+          <div class="meta-block">
+            <span>Last Exit Code</span>
+            <strong id="terminalExitCode">-</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card wide honeynet-card">
+      <div class="card-head">
+        <h2>Live Honeynet State</h2>
+        <span class="subtle" id="honeynetStateLabel">No honeynet activity yet.</span>
+      </div>
+      <div class="honeynet-grid">
+        <div>
+          <h3>Active OT Sessions</h3>
+          <div id="honeynetSessions" class="stream-list"></div>
+        </div>
+        <div>
+          <h3>Recent OT Events</h3>
+          <div id="honeynetEvents" class="stream-list"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="card">
       <h2>Active Sessions</h2>
       <pre id="sessionsBox">No session data yet.</pre>

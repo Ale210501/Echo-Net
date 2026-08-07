@@ -2,6 +2,16 @@ const wsStatusEl = document.getElementById('wsStatus');
 const queueSizeEl = document.getElementById('queueSize');
 const sessionCountEl = document.getElementById('sessionCount');
 const sessionsBox = document.getElementById('sessionsBox');
+const terminalBox = document.getElementById('terminalBox');
+const terminalStateLabel = document.getElementById('terminalStateLabel');
+const terminalSessionKey = document.getElementById('terminalSessionKey');
+const terminalProfile = document.getElementById('terminalProfile');
+const terminalPrompt = document.getElementById('terminalPrompt');
+const terminalCwd = document.getElementById('terminalCwd');
+const terminalExitCode = document.getElementById('terminalExitCode');
+const honeynetStateLabel = document.getElementById('honeynetStateLabel');
+const honeynetSessions = document.getElementById('honeynetSessions');
+const honeynetEvents = document.getElementById('honeynetEvents');
 const predictionList = document.getElementById('predictionList');
 const itList = document.getElementById('itList');
 const otList = document.getElementById('otList');
@@ -55,6 +65,14 @@ function renderItems(container, items, renderer) {
     .reverse()
     .map(renderer)
     .join('');
+}
+
+function renderTranscript(container, transcript) {
+  if (!Array.isArray(transcript) || transcript.length === 0) {
+    container.textContent = 'No terminal transcript yet.';
+    return;
+  }
+  container.textContent = transcript.join('\n');
 }
 
 function renderBarChart(container, entries, colorClass = '') {
@@ -138,12 +156,48 @@ function renderDashboard(data) {
   const sessions = data.sessions || {};
   const sessionKeys = Object.keys(sessions);
   const nowText = new Date().toLocaleTimeString();
+  const liveTerminal = data.live_terminal || {};
+  const honeynet = data.honeynet || {};
 
   queueSizeEl.textContent = String(data.queue_size ?? 0);
   sessionCountEl.textContent = String(sessionKeys.length);
   sessionsBox.textContent = JSON.stringify(sessions, null, 2);
   queueEventsBox.textContent = JSON.stringify(data.recent_queue_events || [], null, 2);
   lastRefreshLabel.textContent = `Last refresh ${nowText}`;
+
+  terminalStateLabel.textContent = liveTerminal.status === 'live'
+    ? 'Live terminal session active'
+    : 'No terminal session yet';
+  terminalSessionKey.textContent = liveTerminal.latest_session?.session_key || '-';
+  terminalProfile.textContent = liveTerminal.latest_session?.shell_family || '-';
+  terminalPrompt.textContent = liveTerminal.latest_session?.prompt || '-';
+  terminalCwd.textContent = liveTerminal.latest_session?.cwd || '-';
+  terminalExitCode.textContent = liveTerminal.latest_session?.last_exit_code ?? '-';
+  renderTranscript(terminalBox, liveTerminal.transcript || []);
+
+  honeynetStateLabel.textContent = honeynet.status === 'live'
+    ? 'Honeynet activity detected'
+    : 'No honeynet activity yet';
+  renderItems(honeynetSessions, honeynet.active_ot_sessions || [], (entry) => {
+    return `
+      <article class="stream-item">
+        <strong>${escapeHtml(entry.session_key || 'ot_session')}</strong>
+        ${statusTag(entry.trap || 'ot')}
+        <div><small>${escapeHtml(entry.last_activity || '-')}</small></div>
+        <div>Domain: ${escapeHtml(entry.target_domain || '-')} | Started: ${escapeHtml(entry.started_at || '-')}</div>
+      </article>
+    `;
+  });
+  renderItems(honeynetEvents, honeynet.recent_ot_events || [], (entry) => {
+    return `
+      <article class="stream-item">
+        <strong>${escapeHtml(entry.event || 'ot_event')}</strong>
+        ${statusTag(entry.status || 'event')}
+        <div><small>${escapeHtml(entry.timestamp || '-')}</small></div>
+        <div>${escapeHtml(entry.detail || '')}</div>
+      </article>
+    `;
+  });
 
   const filteredPredictions = applyFiltersToItems(data.prediction_tail, activeFiltersPredicate);
   const filteredIt = applyFiltersToItems(data.it_commands_tail, activeFiltersPredicate);

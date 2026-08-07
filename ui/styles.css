@@ -131,6 +131,57 @@ body {
   min-height: 230px;
 }
 
+.live-console-card,
+.honeynet-card {
+  background:
+    linear-gradient(180deg, rgba(15, 24, 35, 0.98), rgba(18, 28, 39, 0.96)),
+    radial-gradient(circle at top left, rgba(63, 180, 255, 0.16), transparent 35%);
+}
+
+.live-console-grid,
+.honeynet-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+  gap: 0.9rem;
+}
+
+.live-console-output pre {
+  min-height: 320px;
+}
+
+.live-console-meta {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.meta-block {
+  border: 1px solid var(--border);
+  background: #0d1722;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.meta-block span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.3rem;
+}
+
+.meta-block strong {
+  display: block;
+  word-break: break-word;
+  font-size: 0.95rem;
+}
+
+.honeynet-grid h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+  color: #dfe9f8;
+}
+
 .card h2 {
   margin: 0 0 0.7rem;
   font-size: 1rem;
@@ -268,6 +319,11 @@ button {
   }
 
   .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-console-grid,
+  .honeynet-grid {
     grid-template-columns: 1fr;
   }
 
