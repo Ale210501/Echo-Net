@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echo-Net SOC Live Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <h1>Echo-Net SOC Live Dashboard</h1>
+      <p>Real-time attacker telemetry, deception state, and OT forensic observability</p>
+    </div>
+    <div class="status-grid">
+      <div class="kpi">
+        <span>WebSocket</span>
+        <strong id="wsStatus">Connecting...</strong>
+      </div>
+      <div class="kpi">
+        <span>Event Queue</span>
+        <strong id="queueSize">0</strong>
+      </div>
+      <div class="kpi">
+        <span>Active Sessions</span>
+        <strong id="sessionCount">0</strong>
+      </div>
+    </div>
+  </header>
+
+  <section class="control-strip">
+    <div class="control-group">
+      <label for="techniqueFilter">MITRE Technique</label>
+      <input id="techniqueFilter" type="text" placeholder="e.g. T1059.003" />
+    </div>
+    <div class="control-group">
+      <label for="ipFilter">Source IP</label>
+      <input id="ipFilter" type="text" placeholder="e.g. 10.20.30.40" />
+    </div>
+    <div class="control-group">
+      <label for="behaviorFilter">Behavior Profile</label>
+      <select id="behaviorFilter">
+        <option value="all">All</option>
+        <option value="interactive_or_human_like">Human-like</option>
+        <option value="mixed_or_assisted">Mixed</option>
+        <option value="scripted_or_automated">Automated</option>
+      </select>
+    </div>
+    <div class="control-group buttons">
+      <button id="applyFiltersBtn" type="button">Apply Filters</button>
+      <button id="clearFiltersBtn" type="button">Clear</button>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="card wide">
+      <div class="card-head">
+        <h2>Live Threat Pulse</h2>
+        <span class="subtle" id="lastRefreshLabel">Waiting for data...</span>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-panel">
+          <h3>Top Techniques</h3>
+          <div id="techniqueChart" class="bar-chart"></div>
+        </div>
+        <div class="chart-panel">
+          <h3>Behavior Profiles</h3>
+          <div id="behaviorChart" class="bar-chart"></div>
+        </div>
+        <div class="chart-panel">
+          <h3>OT Events</h3>
+          <div id="otChart" class="bar-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Active Sessions</h2>
+      <pre id="sessionsBox">No session data yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>Prediction Timeline</h2>
+      <div id="predictionList" class="stream-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>IT Command Stream</h2>
+      <div id="itList" class="stream-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>OT Event Stream</h2>
+      <div id="otList" class="stream-list"></div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-head">
+        <h2>Latest SOC Report</h2>
+        <button id="refreshReportBtn" type="button">Refresh</button>
+      </div>
+      <pre id="reportBox">No report loaded.</pre>
+    </section>
+
+    <section class="card wide">
+      <h2>Recent Queue Events</h2>
+      <pre id="queueEventsBox">No queue events yet.</pre>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
