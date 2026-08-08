@@ -8,6 +8,8 @@ from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisco
 
 from app.config import (
     CLEANUP_INTERVAL_SECONDS,
+    CONFIDENCE_AUTO_THRESHOLD,
+    CONFIDENCE_REVIEW_THRESHOLD,
     INACTIVITY_TIMEOUT_SECONDS,
     IT_LOG_FILE,
     KPI_FALSE_TRIGGER_THRESHOLD,
@@ -41,7 +43,14 @@ from app.orchestrator import route_to_ollama_decoy, start_or_touch_conpot
 from app.kpi import compute_kpi_report, save_kpi_report
 from app.scenario_runner import run_basic_scenario
 from app.soc_reporting import generate_soc_report
-from app.state import append_event, get_serialized_sessions, utcnow
+from app.state import (
+    add_pending_approval,
+    append_event,
+    get_pending_approvals,
+    get_serialized_sessions,
+    resolve_pending_approval,
+    utcnow,
+)
 
 router = APIRouter()
 
@@ -164,19 +173,55 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
         technique_id=payload.technique_id,
     )
 
+    confidence = payload.confidence
     runtime_result: Dict[str, object]
-    if reaction["action"] == "ROUTE_TO_LLM_DECOY":
-        runtime_result = route_to_ollama_decoy(
-            payload.attacker_command,
-            metadata=req_meta,
+
+    if confidence >= CONFIDENCE_AUTO_THRESHOLD:
+        # Confidence is high enough to auto-deploy the deception trap.
+        disposition = "auto_deployed"
+        if reaction["action"] == "ROUTE_TO_LLM_DECOY":
+            runtime_result = route_to_ollama_decoy(
+                payload.attacker_command,
+                metadata=req_meta,
+                event_id=event_id,
+            )
+        else:
+            runtime_result = start_or_touch_conpot(correlation_id=event_id)
+
+    elif confidence >= CONFIDENCE_REVIEW_THRESHOLD:
+        # Confidence is in the review band — queue for SOC operator approval.
+        disposition = "pending_approval"
+        add_pending_approval(
             event_id=event_id,
+            payload=payload.model_dump(),
+            reaction=reaction,
+            confidence=confidence,
         )
+        runtime_result = {
+            "status": "pending_approval",
+            "detail": (
+                f"Confidence {confidence:.0%} is between the review threshold "
+                f"({CONFIDENCE_REVIEW_THRESHOLD:.0%}) and the auto-deploy threshold "
+                f"({CONFIDENCE_AUTO_THRESHOLD:.0%}). "
+                "SOC operator approval required — use POST /soc/approve/{event_id}."
+            ),
+        }
+
     else:
-        runtime_result = start_or_touch_conpot(correlation_id=event_id)
+        # Confidence is too low — log and discard without any deception action.
+        disposition = "rejected"
+        runtime_result = {
+            "status": "rejected",
+            "detail": (
+                f"Confidence {confidence:.0%} is below the minimum review threshold "
+                f"({CONFIDENCE_REVIEW_THRESHOLD:.0%}). "
+                "Event logged but no deception action taken."
+            ),
+        }
 
     reaction_with_runtime: Dict[str, object] = {**reaction, **runtime_result}
 
-    if payload.end_of_attack:
+    if payload.end_of_attack and disposition == "auto_deployed":
         reaction_with_runtime["soc_report"] = generate_soc_report(
             attack_label=(
                 f"Echo-Net incident ending at {utcnow().isoformat()} "
@@ -190,6 +235,7 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
             "received_at": utcnow(),
             "payload": payload.model_dump(),
             "reaction": reaction_with_runtime,
+            "disposition": disposition,
         }
     )
 
@@ -198,6 +244,7 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
         accepted_at=utcnow(),
         reaction=reaction_with_runtime,
         queue_status=f"queued:{queue_size}",
+        disposition=disposition,
     )
 
     activation = elapsed_ms(processing_started)
@@ -215,6 +262,53 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
     )
 
     return accepted
+
+
+@router.get("/soc/pending")
+def soc_pending() -> Dict[str, object]:
+    items = get_pending_approvals()
+    return {"count": len(items), "items": items}
+
+
+@router.post("/soc/approve/{event_id}")
+def soc_approve(event_id: str) -> Dict[str, object]:
+    entry = resolve_pending_approval(event_id, "approved")
+    if entry is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No pending approval found for event_id={event_id}.",
+        )
+    reaction = entry["reaction"]
+    payload_data = entry["payload"]
+    attacker_cmd = payload_data.get("attacker_command")
+    if reaction.get("action") == "ROUTE_TO_LLM_DECOY":
+        runtime_result = route_to_ollama_decoy(
+            attacker_cmd, metadata={}, event_id=event_id
+        )
+    else:
+        runtime_result = start_or_touch_conpot(correlation_id=event_id)
+    return {
+        "status": "approved_and_deployed",
+        "event_id": event_id,
+        "action": reaction.get("action"),
+        "confidence": entry["confidence"],
+        "result": runtime_result,
+    }
+
+
+@router.post("/soc/reject/{event_id}")
+def soc_reject(event_id: str) -> Dict[str, object]:
+    entry = resolve_pending_approval(event_id, "rejected")
+    if entry is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No pending approval found for event_id={event_id}.",
+        )
+    return {
+        "status": "rejected",
+        "event_id": event_id,
+        "confidence": entry["confidence"],
+    }
 
 
 @router.get("/kpi/report")

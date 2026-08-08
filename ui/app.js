@@ -17,6 +17,8 @@ const honeynetOverviewContainer = document.getElementById('honeynetOverviewConta
 const scenarioOverview = document.getElementById('scenarioOverview');
 const pivotAlertBox = document.getElementById('pivotAlertBox');
 const pivotSeverityLabel = document.getElementById('pivotSeverityLabel');
+const pendingList = document.getElementById('pendingList');
+const pendingBadge = document.getElementById('pendingBadge');
 const predictionList = document.getElementById('predictionList');
 const itList = document.getElementById('itList');
 const otList = document.getElementById('otList');
@@ -191,6 +193,65 @@ function latestScenarioSummary(queueEvents) {
   return `${status} @ ${ts}`;
 }
 
+async function handleApproval(eventId, action) {
+  try {
+    const res = await fetch(`/soc/${action}/${eventId}`, { method: 'POST' });
+    const body = await res.json();
+    const card = document.getElementById(`approval-${eventId}`);
+    if (card) {
+      card.classList.add(action === 'approve' ? 'resolved-ok' : 'resolved-reject');
+      card.querySelector('.approval-actions').innerHTML =
+        `<span class="state-pill ${action === 'approve' ? 'ok' : 'error'}">${action === 'approve' ? 'Deployed' : 'Rejected'}</span>`;
+    }
+    console.log(`[approval] ${action} → ${eventId}`, body);
+  } catch (err) {
+    console.error(`[approval] ${action} failed`, err);
+  }
+}
+
+function renderPendingApprovals(items) {
+  if (!pendingList) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    pendingBadge.style.display = 'none';
+    pendingList.innerHTML = '<div class="stream-item"><small>No pending approvals.</small></div>';
+    return;
+  }
+
+  pendingBadge.textContent = String(items.length);
+  pendingBadge.style.display = 'inline-flex';
+
+  pendingList.innerHTML = items.map((item) => {
+    const payload = item.payload || {};
+    const reaction = item.reaction || {};
+    const conf = typeof item.confidence === 'number' ? (item.confidence * 100).toFixed(0) + '%' : '-';
+    return `
+      <article class="stream-item approval-card" id="approval-${escapeHtml(item.event_id)}">
+        <div class="approval-header">
+          <span class="state-pill warn">PENDING APPROVAL</span>
+          <strong>${escapeHtml(payload.technique_id || '-')}</strong>
+          <span class="subtle">Domain: ${escapeHtml(payload.target_domain || '-')}</span>
+          <span class="subtle">Confidence: <strong>${conf}</strong></span>
+        </div>
+        <div class="approval-meta">
+          <span>Action: ${escapeHtml(reaction.action || '-')}</span>
+          <span>Received: ${escapeHtml(item.received_at || '-')}</span>
+          <span>Event ID: <code>${escapeHtml(item.event_id)}</code></span>
+        </div>
+        <div class="approval-detail subtle">${escapeHtml(reaction.detail || reaction.description || '')}</div>
+        <div class="approval-actions">
+          <button class="btn-approve" onclick="handleApproval('${escapeHtml(item.event_id)}', 'approve')">
+            ✓ Approve &amp; Deploy
+          </button>
+          <button class="btn-reject" onclick="handleApproval('${escapeHtml(item.event_id)}', 'reject')">
+            ✗ Reject
+          </button>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
 function renderDashboard(data) {
   latestDashboard = data;
   const sessions = data.sessions || {};
@@ -206,6 +267,7 @@ function renderDashboard(data) {
   lastRefreshLabel.textContent = `Last refresh ${nowText}`;
 
   applyPivotAlert(data.pivot_alert || {});
+  renderPendingApprovals(data.pending_approvals || []);
 
   terminalStateLabel.textContent = liveTerminal.status === 'live'
     ? 'Live terminal session active'

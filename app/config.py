@@ -33,6 +33,10 @@ CLEANUP_INTERVAL_SECONDS = int(os.getenv("CLEANUP_INTERVAL_SECONDS", "30"))
 SESSION_KEY_IT = "it_decoy"
 SESSION_KEY_OT = "ot_conpot"
 
+# Confidence thresholds for human-in-the-loop guardrails
+CONFIDENCE_AUTO_THRESHOLD: float = float(os.getenv("CONFIDENCE_AUTO_THRESHOLD", "0.80"))
+CONFIDENCE_REVIEW_THRESHOLD: float = float(os.getenv("CONFIDENCE_REVIEW_THRESHOLD", "0.50"))
+
 KPI_DIR = OBSERVATORY_DIR / "reports" / "kpi"
 KPI_FALSE_TRIGGER_THRESHOLD: float = float(
     os.getenv("KPI_FALSE_TRIGGER_THRESHOLD", "0.5")

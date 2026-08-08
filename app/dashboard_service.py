@@ -9,7 +9,7 @@ import docker
 from docker.errors import DockerException, NotFound
 
 from app.config import CONPOT_CONTAINER_NAME, OBSERVATORY_DIR, OT_EXPORT_DIR
-from app.state import get_event_queue_size, get_recent_events, get_serialized_sessions
+from app.state import get_event_queue_size, get_pending_approvals, get_recent_events, get_serialized_sessions
 
 
 def _read_jsonl_tail(path: Path, limit: int) -> list[Dict[str, object]]:
@@ -351,6 +351,7 @@ def build_dashboard_summary(log_tail: int = 20, event_tail: int = 20) -> Dict[st
         "live_terminal": _latest_terminal_session(sessions),
         "honeynet": _honeynet_live_state(sessions, ot_events),
         "pivot_alert": _pivot_alert(it_commands, predictions, ot_events),
+        "pending_approvals": get_pending_approvals(),
         "queue_size": get_event_queue_size(),
         "recent_queue_events": get_recent_events(event_tail),
         "it_commands_tail": it_commands,

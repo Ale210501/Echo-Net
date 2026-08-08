@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,25 @@ from app.config import (
 
 REPORTS_DIR = OBSERVATORY_DIR / "reports"
 MAX_TOTAL_CONTEXT_CHARS = 1_500_000
+
+# EU AI Act — mandatory disclosure prepended to every generated report.
+_AI_DISCLOSURE_HEADER = """---
+> ⚠ **AI-GENERATED CONTENT — HUMAN VALIDATION REQUIRED**
+>
+> This report was synthesised automatically by a Large Language Model.
+> **Model:** {model}  
+> **Generated at (UTC):** {generated_at}  
+> **Audit bundle:** `{bundle_file}`  
+> **Prompt SHA-256:** `{prompt_sha256}`
+>
+> The content reflects only what the model inferred from the provided JSON
+> artifacts. It may contain hallucinations, omissions, or misattributions.
+> An authorised SOC analyst **must** review and sign off this document before
+> any operational or legal use. Refer to the audit bundle for the exact prompt
+> and all source data used as input.
+---
+
+"""
 
 
 def _now_stamp() -> str:
@@ -110,11 +130,22 @@ def generate_soc_report(
     model: Optional[str] = None,
 ) -> Dict[str, object]:
     bundle = _collect_json_artifacts()
-    bundle_file = REPORTS_DIR / f"attack_bundle_{_now_stamp()}.json"
-    bundle_file.write_text(json.dumps(bundle, ensure_ascii=True, indent=2), encoding="utf-8")
-
     prompt = _build_soc_prompt(bundle=bundle, attack_label=attack_label)
     chosen_model = model or OLLAMA_MODEL
+    generated_at = datetime.now(timezone.utc).isoformat()
+    prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+    # Embed provenance so analysts can reconstruct exactly what the LLM received.
+    bundle["ai_provenance"] = {
+        "model": chosen_model,
+        "generated_at": generated_at,
+        "prompt_sha256": prompt_sha256,
+        "prompt_char_count": len(prompt),
+        "prompt_text": prompt,
+    }
+
+    bundle_file = REPORTS_DIR / f"attack_bundle_{_now_stamp()}.json"
+    bundle_file.write_text(json.dumps(bundle, ensure_ascii=True, indent=2), encoding="utf-8")
 
     attempted_errors: list[str] = []
     for base_url in _build_ollama_urls():
@@ -142,8 +173,14 @@ def generate_soc_report(
                 attempted_errors.append(f"{base_url} -> empty LLM output")
                 continue
 
+            disclosure = _AI_DISCLOSURE_HEADER.format(
+                model=chosen_model,
+                generated_at=generated_at,
+                bundle_file=bundle_file.name,
+                prompt_sha256=prompt_sha256,
+            )
             report_file = REPORTS_DIR / f"soc_report_{_now_stamp()}.md"
-            report_file.write_text(report_text, encoding="utf-8")
+            report_file.write_text(disclosure + report_text, encoding="utf-8")
             return {
                 "status": "generated",
                 "model": chosen_model,

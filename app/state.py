@@ -12,6 +12,9 @@ session_state: Dict[str, TrapSession] = {}
 event_queue_lock = threading.Lock()
 event_queue: list[Dict[str, object]] = []
 
+_approvals_lock = threading.Lock()
+_approvals: Dict[str, Dict[str, object]] = {}  # keyed by event_id
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -98,3 +101,49 @@ def get_recent_events(limit: int = 50) -> list[Dict[str, object]]:
 
     # Convert datetime/object fields to JSON-safe values.
     return json.loads(json.dumps(chunk, default=str))
+
+
+# ---------------------------------------------------------------------------
+# Pending approvals (Human-in-the-Loop)
+# ---------------------------------------------------------------------------
+
+def add_pending_approval(
+    event_id: str,
+    payload: Dict[str, object],
+    reaction: Dict[str, object],
+    confidence: float,
+) -> None:
+    now = utcnow().isoformat()
+    with _approvals_lock:
+        _approvals[event_id] = {
+            "event_id": event_id,
+            "received_at": now,
+            "payload": payload,
+            "reaction": reaction,
+            "confidence": confidence,
+            "status": "pending",
+            "resolved_at": None,
+        }
+
+
+def get_pending_approvals() -> list[Dict[str, object]]:
+    with _approvals_lock:
+        return json.loads(
+            json.dumps(
+                [v for v in _approvals.values() if v["status"] == "pending"],
+                default=str,
+            )
+        )
+
+
+def resolve_pending_approval(
+    event_id: str, resolution: str
+) -> Optional[Dict[str, object]]:
+    """Mark a pending approval as resolved. Returns the stored entry or None if not found."""
+    with _approvals_lock:
+        entry = _approvals.get(event_id)
+        if entry is None or entry["status"] != "pending":
+            return None
+        entry["status"] = resolution
+        entry["resolved_at"] = utcnow().isoformat()
+        return json.loads(json.dumps(entry, default=str))

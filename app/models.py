@@ -62,6 +62,7 @@ class PredictionAccepted(BaseModel):
     accepted_at: datetime
     reaction: Dict[str, object]
     queue_status: str
+    disposition: Literal["auto_deployed", "pending_approval", "rejected"]
 
 
 class AttackerCommandIn(BaseModel):

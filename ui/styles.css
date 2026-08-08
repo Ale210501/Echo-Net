@@ -603,6 +603,72 @@ button {
   cursor: pointer;
 }
 
+/* --- Pending Approval Cards ----------------------------------------------- */
+.approval-section {
+  border-left: 4px solid var(--warn);
+}
+
+.approval-card {
+  border-left: 4px solid var(--warn) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.approval-card.resolved-ok   { border-left-color: var(--ok) !important; opacity: 0.6; }
+.approval-card.resolved-reject { border-left-color: var(--err) !important; opacity: 0.6; }
+
+.approval-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.approval-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.approval-detail {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.btn-approve {
+  background: rgba(82, 210, 115, 0.12);
+  border: 1px solid var(--ok);
+  color: var(--ok);
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-approve:hover { background: rgba(82, 210, 115, 0.25); }
+
+.btn-reject {
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid var(--err);
+  color: var(--err);
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-reject:hover { background: rgba(255, 107, 107, 0.25); }
+
 @media (max-width: 900px) {
   .overview-grid,
   .control-strip,
