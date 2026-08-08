@@ -176,6 +176,8 @@ def log_prediction_outcome(
     reaction: Dict[str, object],
     queue_status: str,
     processing_ms: float,
+    activation_ms: Optional[float] = None,
+    is_false_trigger: Optional[bool] = None,
 ) -> None:
     _append_jsonl(
         PREDICTION_LOG_FILE,
@@ -186,6 +188,8 @@ def log_prediction_outcome(
             "reaction": reaction,
             "queue_status": queue_status,
             "processing_ms": processing_ms,
+            "activation_ms": activation_ms if activation_ms is not None else processing_ms,
+            "is_false_trigger": is_false_trigger,
         },
     )
 

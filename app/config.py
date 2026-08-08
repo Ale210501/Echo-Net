@@ -32,3 +32,8 @@ CLEANUP_INTERVAL_SECONDS = int(os.getenv("CLEANUP_INTERVAL_SECONDS", "30"))
 
 SESSION_KEY_IT = "it_decoy"
 SESSION_KEY_OT = "ot_conpot"
+
+KPI_DIR = OBSERVATORY_DIR / "reports" / "kpi"
+KPI_FALSE_TRIGGER_THRESHOLD: float = float(
+    os.getenv("KPI_FALSE_TRIGGER_THRESHOLD", "0.5")
+)

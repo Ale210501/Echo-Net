@@ -10,6 +10,7 @@ from app.config import (
     CLEANUP_INTERVAL_SECONDS,
     INACTIVITY_TIMEOUT_SECONDS,
     IT_LOG_FILE,
+    KPI_FALSE_TRIGGER_THRESHOLD,
     OT_EVENT_LOG_FILE,
     OT_EXPORT_DIR,
     PREDICTION_LOG_FILE,
@@ -37,6 +38,7 @@ from app.observatory import (
     start_timer,
 )
 from app.orchestrator import route_to_ollama_decoy, start_or_touch_conpot
+from app.kpi import compute_kpi_report, save_kpi_report
 from app.scenario_runner import run_basic_scenario
 from app.soc_reporting import generate_soc_report
 from app.state import append_event, get_serialized_sessions, utcnow
@@ -198,11 +200,28 @@ def receive_prediction(payload: PredictionIn, request: Request) -> PredictionAcc
         queue_status=f"queued:{queue_size}",
     )
 
+    activation = elapsed_ms(processing_started)
+    _ERROR_STATUSES = {"error", "docker_unavailable", "docker_error", "connection_error"}
+    action_failed = str(reaction_with_runtime.get("status", "")) in _ERROR_STATUSES
+    is_false_trigger = payload.confidence < KPI_FALSE_TRIGGER_THRESHOLD or action_failed
+
     log_prediction_outcome(
         event_id=event_id,
         reaction=reaction_with_runtime,
         queue_status=accepted.queue_status,
-        processing_ms=elapsed_ms(processing_started),
+        processing_ms=activation,
+        activation_ms=activation,
+        is_false_trigger=is_false_trigger,
     )
 
     return accepted
+
+
+@router.get("/kpi/report")
+def kpi_report() -> Dict[str, object]:
+    return compute_kpi_report()
+
+
+@router.post("/kpi/report/save")
+def kpi_report_save() -> Dict[str, object]:
+    return save_kpi_report()
