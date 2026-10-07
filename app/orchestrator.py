@@ -119,6 +119,13 @@ def _run_new_conpot_container(docker_client: object) -> object:
         detach=True,
         network=HONEYPOT_NETWORK,
         volumes=_conpot_volume_bindings(),
+        environment={
+            "CONPOT_CONFIG": "/etc/conpot/conpot.cfg",
+            "CONPOT_JSON_LOG": f"{CONPOT_CONTAINER_LOG_DIR}/conpot.json",
+            "CONPOT_LOG": f"{CONPOT_CONTAINER_LOG_DIR}/conpot.log",
+            "CONPOT_TEMPLATE": "default",
+            "CONPOT_TMP": "/tmp",
+        },
         labels={
             "echo_net": "true",
             "role": "ot_honeypot",

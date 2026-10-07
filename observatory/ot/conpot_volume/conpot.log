@@ -1,0 +1,232 @@
+2026-10-05 14:34:00,100 Config file found!
+2026-10-05 14:34:00,105 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 14:34:00,106 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 14:34:00,128 Temp directory not specified, will create at: /usr/lib/python3.12/site-packages/conpot/ConpotTempFS
+2026-10-05 14:34:22,481 Config file found!
+2026-10-05 14:34:22,483 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 14:34:22,484 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 14:34:22,490 Serving tar:///usr/lib/python3.12/site-packages/conpot/data.tar as file system. File uploads will be kept at : /tmp
+2026-10-05 14:34:22,491 Opening path /tmp for persistent storage of files.
+2026-10-05 14:34:22,492 Initializing Virtual File System at /tmp/__conpot__rrelfa4p. Source specified : tar:///usr/lib/python3.12/site-packages/conpot/data.tar
+ Please wait while the system copies all specified files
+2026-10-05 14:34:27,516 Could not fetch public ip from http://whatismyip.akamai.com/
+2026-10-05 14:34:32,524 Could not fetch public ip from http://wgetip.com/
+2026-10-05 14:34:32,525 Could not fetch public ip: None
+2026-10-05 14:34:32,531 Conpot Bacnet initialized using the /usr/lib/python3.12/site-packages/conpot/templates/default/bacnet/bacnet.xml template.
+2026-10-05 14:34:32,533 Found and enabled bacnet protocol.
+2026-10-05 14:34:32,539 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:34:32,539 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:34:32,540 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:34:32,541 Class    22/0x0016, Instance   1, Attribute     3 <== [{'class': 22}, {'instance': 1}, {'attribute': 3}]
+2026-10-05 14:34:32,542 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:34:32,542 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:34:32,543 Found and enabled enip protocol.
+2026-10-05 14:34:32,547 Creating persistent data store for protocol: ftp
+2026-10-05 14:34:32,553 FTP Serving File System at /data/ftp/ in vfs. FTP data_fs sub directory: /ftp
+2026-10-05 14:34:32,558 Found and enabled ftp protocol.
+2026-10-05 14:34:32,562 Found and enabled http protocol.
+2026-10-05 14:34:32,566 IPMI BMC initialized.
+2026-10-05 14:34:32,567 Conpot IPMI initialized using /usr/lib/python3.12/site-packages/conpot/templates/default/ipmi/ipmi.xml template
+2026-10-05 14:34:32,568 Found and enabled ipmi protocol.
+2026-10-05 14:34:32,574 Conpot modbus initialized
+2026-10-05 14:34:32,574 Found and enabled modbus protocol.
+2026-10-05 14:34:32,577 Conpot S7Comm initialized
+2026-10-05 14:34:32,578 Found and enabled s7comm protocol.
+2026-10-05 14:34:32,580 Found and enabled snmp protocol.
+2026-10-05 14:34:32,583 Creating persistent data store for protocol: tftp
+2026-10-05 14:34:32,588 TFTP Serving File System at /data/tftp/ in vfs. TFTP data_fs sub directory: /tftp
+2026-10-05 14:34:32,589 Found and enabled tftp protocol.
+2026-10-05 14:34:32,593 No proxy template found. Service will remain unconfigured/stopped.
+2026-10-05 14:34:32,595 Bacnet server started on: ('0.0.0.0', 47808)
+2026-10-05 14:36:05,326 Config file found!
+2026-10-05 14:36:05,332 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 14:36:05,333 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 14:36:05,378 Serving tar:///usr/lib/python3.12/site-packages/conpot/data.tar as file system. File uploads will be kept at : /tmp
+2026-10-05 14:36:05,379 Opening path /tmp for persistent storage of files.
+2026-10-05 14:36:05,386 Initializing Virtual File System at /tmp/__conpot__u7b3vcmn. Source specified : tar:///usr/lib/python3.12/site-packages/conpot/data.tar
+ Please wait while the system copies all specified files
+2026-10-05 14:36:10,440 Could not fetch public ip from http://whatismyip.akamai.com/
+2026-10-05 14:36:15,460 Could not fetch public ip from http://wgetip.com/
+2026-10-05 14:36:15,463 Could not fetch public ip: None
+2026-10-05 14:36:15,479 Conpot Bacnet initialized using the /usr/lib/python3.12/site-packages/conpot/templates/default/bacnet/bacnet.xml template.
+2026-10-05 14:36:15,482 Found and enabled bacnet protocol.
+2026-10-05 14:36:15,493 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:36:15,496 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:36:15,497 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:36:15,503 Class    22/0x0016, Instance   1, Attribute     3 <== [{'class': 22}, {'instance': 1}, {'attribute': 3}]
+2026-10-05 14:36:15,505 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:36:15,507 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:36:15,509 Found and enabled enip protocol.
+2026-10-05 14:36:15,524 Creating persistent data store for protocol: ftp
+2026-10-05 14:36:15,537 FTP Serving File System at /data/ftp/ in vfs. FTP data_fs sub directory: /ftp
+2026-10-05 14:36:15,555 Found and enabled ftp protocol.
+2026-10-05 14:36:15,564 Found and enabled http protocol.
+2026-10-05 14:36:15,569 IPMI BMC initialized.
+2026-10-05 14:36:15,572 Conpot IPMI initialized using /usr/lib/python3.12/site-packages/conpot/templates/default/ipmi/ipmi.xml template
+2026-10-05 14:36:15,573 Found and enabled ipmi protocol.
+2026-10-05 14:36:15,581 Conpot modbus initialized
+2026-10-05 14:36:15,583 Found and enabled modbus protocol.
+2026-10-05 14:36:15,593 Conpot S7Comm initialized
+2026-10-05 14:36:15,597 Found and enabled s7comm protocol.
+2026-10-05 14:36:15,604 Found and enabled snmp protocol.
+2026-10-05 14:36:15,607 Creating persistent data store for protocol: tftp
+2026-10-05 14:36:15,618 TFTP Serving File System at /data/tftp/ in vfs. TFTP data_fs sub directory: /tftp
+2026-10-05 14:36:15,623 Found and enabled tftp protocol.
+2026-10-05 14:36:15,632 No proxy template found. Service will remain unconfigured/stopped.
+2026-10-05 14:36:15,637 Bacnet server started on: ('0.0.0.0', 47808)
+2026-10-05 14:36:35,664 handle server PID [    1] starting on ('0.0.0.0', 44818)
+2026-10-05 14:36:35,700 handle server PID [    1] responding to external done/disable signal via <class 'cpppo.dotdict.apidict'> {'done': False, 'disable': False, 'latency': 0.1}
+2026-10-05 14:36:35,703 Serving TCP/IP:     1, UDP/IP:     0, w/ latency:   0.100s, timeout:   0.200s (w/NO idle service)
+2026-10-05 14:36:35,713 FTP server started on: ('0.0.0.0', 21)
+2026-10-05 14:36:35,718 HTTP server started on: ('0.0.0.0', 80)
+2026-10-05 14:36:35,722 IPMI server started on: ('0.0.0.0', 623)
+2026-10-05 14:36:35,723 Modbus server started on: ('0.0.0.0', 502)
+2026-10-05 14:36:35,726 S7Comm server started on: ('0.0.0.0', 102)
+2026-10-05 14:36:37,092 SNMP server started on: ('0.0.0.0', 161)
+2026-10-05 14:36:37,094 Starting TFTP server at ('0.0.0.0', 69)
+2026-10-05 14:40:30,863 Config file found!
+2026-10-05 14:40:30,872 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 14:40:30,874 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 14:40:30,987 Serving tar:///usr/lib/python3.12/site-packages/conpot/data.tar as file system. File uploads will be kept at : /tmp
+2026-10-05 14:40:30,988 Opening path /tmp for persistent storage of files.
+2026-10-05 14:40:30,993 Initializing Virtual File System at /tmp/__conpot__z2rcrtio. Source specified : tar:///usr/lib/python3.12/site-packages/conpot/data.tar
+ Please wait while the system copies all specified files
+2026-10-05 14:40:36,089 Could not fetch public ip from http://whatismyip.akamai.com/
+2026-10-05 14:40:41,117 Could not fetch public ip from http://wgetip.com/
+2026-10-05 14:40:41,122 Could not fetch public ip: None
+2026-10-05 14:40:41,130 Conpot Bacnet initialized using the /usr/lib/python3.12/site-packages/conpot/templates/default/bacnet/bacnet.xml template.
+2026-10-05 14:40:41,137 Found and enabled bacnet protocol.
+2026-10-05 14:40:41,157 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:40:41,158 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:40:41,166 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:40:41,171 Class    22/0x0016, Instance   1, Attribute     3 <== [{'class': 22}, {'instance': 1}, {'attribute': 3}]
+2026-10-05 14:40:41,182 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 14:40:41,186 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 14:40:41,190 Found and enabled enip protocol.
+2026-10-05 14:40:41,207 Creating persistent data store for protocol: ftp
+2026-10-05 14:40:41,262 FTP Serving File System at /data/ftp/ in vfs. FTP data_fs sub directory: /ftp
+2026-10-05 14:40:41,310 Found and enabled ftp protocol.
+2026-10-05 14:40:41,324 Found and enabled http protocol.
+2026-10-05 14:40:41,337 IPMI BMC initialized.
+2026-10-05 14:40:41,352 Conpot IPMI initialized using /usr/lib/python3.12/site-packages/conpot/templates/default/ipmi/ipmi.xml template
+2026-10-05 14:40:41,358 Found and enabled ipmi protocol.
+2026-10-05 14:40:41,375 Conpot modbus initialized
+2026-10-05 14:40:41,379 Found and enabled modbus protocol.
+2026-10-05 14:40:41,389 Conpot S7Comm initialized
+2026-10-05 14:40:41,399 Found and enabled s7comm protocol.
+2026-10-05 14:40:41,404 Found and enabled snmp protocol.
+2026-10-05 14:40:41,406 Creating persistent data store for protocol: tftp
+2026-10-05 14:40:41,427 TFTP Serving File System at /data/tftp/ in vfs. TFTP data_fs sub directory: /tftp
+2026-10-05 14:40:41,439 Found and enabled tftp protocol.
+2026-10-05 14:40:41,454 No proxy template found. Service will remain unconfigured/stopped.
+2026-10-05 14:40:41,458 Bacnet server started on: ('0.0.0.0', 47808)
+2026-10-05 14:41:01,471 handle server PID [    1] starting on ('0.0.0.0', 44818)
+2026-10-05 14:41:01,473 handle server PID [    1] responding to external done/disable signal via <class 'cpppo.dotdict.apidict'> {'done': False, 'disable': False, 'latency': 0.1}
+2026-10-05 14:41:01,484 Serving TCP/IP:     1, UDP/IP:     0, w/ latency:   0.100s, timeout:   0.200s (w/NO idle service)
+2026-10-05 14:41:01,487 FTP server started on: ('0.0.0.0', 21)
+2026-10-05 14:41:01,488 HTTP server started on: ('0.0.0.0', 80)
+2026-10-05 14:41:01,491 IPMI server started on: ('0.0.0.0', 623)
+2026-10-05 14:41:01,499 Modbus server started on: ('0.0.0.0', 502)
+2026-10-05 14:41:01,502 S7Comm server started on: ('0.0.0.0', 102)
+2026-10-05 14:41:04,832 SNMP server started on: ('0.0.0.0', 161)
+2026-10-05 14:41:04,834 Starting TFTP server at ('0.0.0.0', 69)
+2026-10-05 15:10:45,391 Stopping Conpot
+2026-10-05 15:10:45,473 handle server PID [    1] shutting down (done)
+2026-10-05 15:10:45,487 HTTP server will shut down gracefully as soon as all connections are closed.
+2026-10-05 15:10:47,536 Shutting down File System. Cleaning directories at /tmp/__conpot__z2rcrtio
+2026-10-05 15:49:51,146 Config file found!
+2026-10-05 15:49:51,150 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 15:49:51,151 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 15:49:51,169 Serving tar:///usr/lib/python3.12/site-packages/conpot/data.tar as file system. File uploads will be kept at : /tmp
+2026-10-05 15:49:51,170 Opening path /tmp for persistent storage of files.
+2026-10-05 15:49:51,173 Initializing Virtual File System at /tmp/__conpot__3kp8u7cc. Source specified : tar:///usr/lib/python3.12/site-packages/conpot/data.tar
+ Please wait while the system copies all specified files
+2026-10-05 15:49:56,216 Could not fetch public ip from http://whatismyip.akamai.com/
+2026-10-05 15:50:01,226 Could not fetch public ip from http://wgetip.com/
+2026-10-05 15:50:01,228 Could not fetch public ip: None
+2026-10-05 15:50:01,233 Conpot Bacnet initialized using the /usr/lib/python3.12/site-packages/conpot/templates/default/bacnet/bacnet.xml template.
+2026-10-05 15:50:01,235 Found and enabled bacnet protocol.
+2026-10-05 15:50:01,241 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 15:50:01,242 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 15:50:01,243 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 15:50:01,247 Class    22/0x0016, Instance   1, Attribute     3 <== [{'class': 22}, {'instance': 1}, {'attribute': 3}]
+2026-10-05 15:50:01,248 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 15:50:01,249 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 15:50:01,250 Found and enabled enip protocol.
+2026-10-05 15:50:01,259 Creating persistent data store for protocol: ftp
+2026-10-05 15:50:01,267 FTP Serving File System at /data/ftp/ in vfs. FTP data_fs sub directory: /ftp
+2026-10-05 15:50:01,279 Found and enabled ftp protocol.
+2026-10-05 15:50:01,284 Found and enabled http protocol.
+2026-10-05 15:50:01,288 IPMI BMC initialized.
+2026-10-05 15:50:01,290 Conpot IPMI initialized using /usr/lib/python3.12/site-packages/conpot/templates/default/ipmi/ipmi.xml template
+2026-10-05 15:50:01,292 Found and enabled ipmi protocol.
+2026-10-05 15:50:01,302 Conpot modbus initialized
+2026-10-05 15:50:01,303 Found and enabled modbus protocol.
+2026-10-05 15:50:01,309 Conpot S7Comm initialized
+2026-10-05 15:50:01,311 Found and enabled s7comm protocol.
+2026-10-05 15:50:01,316 Found and enabled snmp protocol.
+2026-10-05 15:50:01,320 Creating persistent data store for protocol: tftp
+2026-10-05 15:50:01,328 TFTP Serving File System at /data/tftp/ in vfs. TFTP data_fs sub directory: /tftp
+2026-10-05 15:50:01,332 Found and enabled tftp protocol.
+2026-10-05 15:50:01,337 No proxy template found. Service will remain unconfigured/stopped.
+2026-10-05 15:50:01,342 Bacnet server started on: ('0.0.0.0', 47808)
+2026-10-05 15:50:21,349 handle server PID [    1] starting on ('0.0.0.0', 44818)
+2026-10-05 15:50:21,350 handle server PID [    1] responding to external done/disable signal via <class 'cpppo.dotdict.apidict'> {'done': False, 'disable': False, 'latency': 0.1}
+2026-10-05 15:50:21,351 Serving TCP/IP:     1, UDP/IP:     0, w/ latency:   0.100s, timeout:   0.200s (w/NO idle service)
+2026-10-05 15:50:21,353 FTP server started on: ('0.0.0.0', 21)
+2026-10-05 15:50:21,354 HTTP server started on: ('0.0.0.0', 80)
+2026-10-05 15:50:21,356 IPMI server started on: ('0.0.0.0', 623)
+2026-10-05 15:50:21,357 Modbus server started on: ('0.0.0.0', 502)
+2026-10-05 15:50:21,360 S7Comm server started on: ('0.0.0.0', 102)
+2026-10-05 15:50:24,008 SNMP server started on: ('0.0.0.0', 161)
+2026-10-05 15:50:24,013 Starting TFTP server at ('0.0.0.0', 69)
+2026-10-05 16:19:53,231 Stopping Conpot
+2026-10-05 16:19:53,276 handle server PID [    1] shutting down (done)
+2026-10-05 16:19:53,284 HTTP server will shut down gracefully as soon as all connections are closed.
+2026-10-05 16:19:54,665 Shutting down File System. Cleaning directories at /tmp/__conpot__3kp8u7cc
+2026-10-05 16:33:13,980 Config file found!
+2026-10-05 16:33:13,982 Starting Conpot using template: /usr/lib/python3.12/site-packages/conpot/templates/default
+2026-10-05 16:33:13,982 Starting Conpot using configuration found in: /etc/conpot/conpot.cfg
+2026-10-05 16:33:13,995 Serving tar:///usr/lib/python3.12/site-packages/conpot/data.tar as file system. File uploads will be kept at : /tmp
+2026-10-05 16:33:13,996 Opening path /tmp for persistent storage of files.
+2026-10-05 16:33:13,999 Initializing Virtual File System at /tmp/__conpot__2z0bn4vg. Source specified : tar:///usr/lib/python3.12/site-packages/conpot/data.tar
+ Please wait while the system copies all specified files
+2026-10-05 16:33:19,026 Could not fetch public ip from http://whatismyip.akamai.com/
+2026-10-05 16:33:24,035 Could not fetch public ip from http://wgetip.com/
+2026-10-05 16:33:24,036 Could not fetch public ip: None
+2026-10-05 16:33:24,038 Conpot Bacnet initialized using the /usr/lib/python3.12/site-packages/conpot/templates/default/bacnet/bacnet.xml template.
+2026-10-05 16:33:24,040 Found and enabled bacnet protocol.
+2026-10-05 16:33:24,045 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 16:33:24,046 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 16:33:24,047 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 16:33:24,049 Class    22/0x0016, Instance   1, Attribute     3 <== [{'class': 22}, {'instance': 1}, {'attribute': 3}]
+2026-10-05 16:33:24,049 Class    22/0x0016, Instance   1, Attribute     1 <== [{'class': 22}, {'instance': 1}, {'attribute': 1}]
+2026-10-05 16:33:24,050 Class    22/0x0016, Instance   1, Attribute     2 <== [{'class': 22}, {'instance': 1}, {'attribute': 2}]
+2026-10-05 16:33:24,051 Found and enabled enip protocol.
+2026-10-05 16:33:24,054 Creating persistent data store for protocol: ftp
+2026-10-05 16:33:24,062 FTP Serving File System at /data/ftp/ in vfs. FTP data_fs sub directory: /ftp
+2026-10-05 16:33:24,066 Found and enabled ftp protocol.
+2026-10-05 16:33:24,069 Found and enabled http protocol.
+2026-10-05 16:33:24,071 IPMI BMC initialized.
+2026-10-05 16:33:24,072 Conpot IPMI initialized using /usr/lib/python3.12/site-packages/conpot/templates/default/ipmi/ipmi.xml template
+2026-10-05 16:33:24,075 Found and enabled ipmi protocol.
+2026-10-05 16:33:24,080 Conpot modbus initialized
+2026-10-05 16:33:24,081 Found and enabled modbus protocol.
+2026-10-05 16:33:24,083 Conpot S7Comm initialized
+2026-10-05 16:33:24,083 Found and enabled s7comm protocol.
+2026-10-05 16:33:24,085 Found and enabled snmp protocol.
+2026-10-05 16:33:24,088 Creating persistent data store for protocol: tftp
+2026-10-05 16:33:24,094 TFTP Serving File System at /data/tftp/ in vfs. TFTP data_fs sub directory: /tftp
+2026-10-05 16:33:24,096 Found and enabled tftp protocol.
+2026-10-05 16:33:24,100 No proxy template found. Service will remain unconfigured/stopped.
+2026-10-05 16:33:24,102 Bacnet server started on: ('0.0.0.0', 47808)
+2026-10-05 16:33:44,105 handle server PID [    1] starting on ('0.0.0.0', 44818)
+2026-10-05 16:33:44,107 handle server PID [    1] responding to external done/disable signal via <class 'cpppo.dotdict.apidict'> {'done': False, 'disable': False, 'latency': 0.1}
+2026-10-05 16:33:44,108 Serving TCP/IP:     1, UDP/IP:     0, w/ latency:   0.100s, timeout:   0.200s (w/NO idle service)
+2026-10-05 16:33:44,110 FTP server started on: ('0.0.0.0', 21)
+2026-10-05 16:33:44,112 HTTP server started on: ('0.0.0.0', 80)
+2026-10-05 16:33:44,115 IPMI server started on: ('0.0.0.0', 623)
+2026-10-05 16:33:44,117 Modbus server started on: ('0.0.0.0', 502)
+2026-10-05 16:33:44,118 S7Comm server started on: ('0.0.0.0', 102)
+2026-10-05 16:33:46,983 SNMP server started on: ('0.0.0.0', 161)
+2026-10-05 16:33:46,985 Starting TFTP server at ('0.0.0.0', 69)
